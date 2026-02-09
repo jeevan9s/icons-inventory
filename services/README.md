@@ -12,4 +12,4 @@
 #TODO
 
 ### Documentation
-* [MS Auth Lib]("https://github.com/AzureAD/microsoft-authentication-library-for-js")
+* [MS Auth Lib](https://azuread.github.io/microsoft-authentication-library-for-js/ref/index.html)
