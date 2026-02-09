@@ -11,3 +11,5 @@
 ### Technologies 
 #TODO
 
+### Documentation
+* [MS Auth Lib]("https://github.com/AzureAD/microsoft-authentication-library-for-js")
