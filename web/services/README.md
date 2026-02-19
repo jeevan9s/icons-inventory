@@ -9,7 +9,8 @@
 #TODO
 
 ### Technologies 
-#TODO
+* SSR Supabase Auth 
 
 ### Documentation
-* [MS Auth Lib](https://azuread.github.io/microsoft-authentication-library-for-js/ref/index.html)
+* [Supabase JS Reference](https://supabase.com/docs/reference/javascript/introduction)
+* [Supabase Auth Lib](https://supabase.com/docs/guides/auth/server-side/creating-a-client)
