@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "iCons IMS",
-  description: "iCons inventory management system | group 887D APSC 103 W26",
+  description: "iCons inventory management",
 };
 
 export default function RootLayout({
