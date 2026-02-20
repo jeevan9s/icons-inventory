@@ -1,5 +1,5 @@
 import { StaffUser } from "./types";
-import { populateUser } from "../auth";
+import { populateUser } from "../client";
 
 const userInfo = await populateUser(); 
 

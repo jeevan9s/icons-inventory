@@ -1,9 +1,9 @@
 // ez frontend calls
-import * as auth from "@/services/auth/auth";
+import { loginWithMicrosoft, logout, populateUser } from "./client";
 import authLogger from "./utils/authLogger";
 
 export const onLogin = async () => {
-    const { error } = await auth.loginWithMicrosoft();
+    const { error } = await loginWithMicrosoft();
     if (error) {
         console.error("login failed:", error.message);
         alert("could not connect to queen's NETID.")
@@ -11,11 +11,11 @@ export const onLogin = async () => {
 }
 
 export const onLogout = async () => {
-    await auth.logout();
+    await logout();
 }
 
 export const onCheckStatus = async () => {
-    const user = await auth.populateUser();
+    const user = await populateUser();
     if (user) {
         authLogger(user);
     }

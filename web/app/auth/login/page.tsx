@@ -13,12 +13,12 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
       <div className="flex flex-col items-center justify-center gap-3">
-        <h1>Microsoft OAuth login test</h1>
+        <h1>microsoft oauth login test</h1>
         <button
           onClick={startMSLogin}
           className="bg-neutral-800 hover:bg-neutral-700 text-white py-2 px-4 rounded-lg cursor-pointer"
         >
-          Login
+          login
         </button>
       </div>
     </div>

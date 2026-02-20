@@ -1,6 +1,6 @@
 // redirect URI
 import { NextResponse } from 'next/server';
-import { getServerClient } from '@/services/auth/auth';
+import { getServerClient } from '@/services/auth/server';
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);

@@ -18,11 +18,10 @@ export interface StaffUser {
 // export const prodRedirectUri = loadEnvVar("MS_PROD_REDIRECT_URI");
 // export const jwtSecret = loadEnvVar("JWT_SECRET"); 
 // export const jwtExpiry = loadEnvVar("JWT_EXPIRATION");
-export const supabaseURL = loadEnvVar("NEXT_PUBLIC_SUPABASE_URL");
-export const supabaseAnonKey = loadEnvVar("NEXT_PUBLIC_SUPABASE_ANON_KEY");
-export const supabasePubKey = loadEnvVar("NEXT_PUBLIC_SUPABASE_PUB_KEY");
-export const msTenantId = loadEnvVar("NEXT_PUBLIC_MS_TENANT_ID");
-export const devRedirectUri = loadEnvVar("DEV_REDIRECT_URI");
-export const prodRedirectUri = loadEnvVar("PROD_REDIRECT_URI");
+export const supabaseURL = () => loadEnvVar("NEXT_PUBLIC_SUPABASE_URL");
+export const supabaseAnonKey = () => loadEnvVar("NEXT_PUBLIC_SUPABASE_ANON_KEY");
+export const msTenantId =  () => loadEnvVar("NEXT_PUBLIC_MS_TENANT_ID");
 
-
+export const devRedirectUri = () => loadEnvVar("NEXT_PUBLIC_DEV_REDIRECT_URI");
+export const prodRedirectUri = () => loadEnvVar("NEXT_PUBLIC_PROD_REDIRECT_URI");
+    

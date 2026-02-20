@@ -6,7 +6,7 @@
 * Microsoft OAuth
 
 ### Design Notes
-#TODO
+* check out sandbox.ts to play around with TS. To run it, paste this in project root terminal: `npx ts-node web/services/sandbox.ts`
 
 ### Technologies 
 * SSR Supabase Auth 
