@@ -1,14 +1,14 @@
 import { loadEnvVar } from "./helpers";
 
 
-export type role = "admin" | "operator";
+export type role = "admin" | "operator" | "dev";
 
-export interface StaffUser {
+export interface user {
     id: string;
     email: string | undefined,
     name: string | undefined, 
     lastSignIn?: string,
-    role?:role;
+    role:role;
 };
 
 // env vars

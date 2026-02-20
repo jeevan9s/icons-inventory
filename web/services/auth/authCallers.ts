@@ -21,3 +21,16 @@ export const onCheckStatus = async () => {
     }
     return user;
 }
+
+export async function getUserInfo() {
+    try {
+        const profile = await populateUser();
+        if (!profile) return null;
+
+        return profile;
+    } catch (error) {
+        console.error("failed to get user info", error);
+        return null;
+    }
+
+}

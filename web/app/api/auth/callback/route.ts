@@ -5,7 +5,7 @@ import { getServerClient } from '@/services/auth/server';
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get('code');
-  const next = searchParams.get('next') ?? '/dashboard';
+  const next = searchParams.get('next') ?? '/auth/auth-success';
 
   if (code) {
     const supabase = await getServerClient();
@@ -16,5 +16,5 @@ export async function GET(request: Request) {
     }
   }
 
-  return NextResponse.redirect(`${origin}/pages/authError`);
+  return NextResponse.redirect(`${origin}/auth/auth-error`);
 }
