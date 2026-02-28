@@ -7,17 +7,9 @@ export interface Item {
     equipmentType: equipmentType
 }
 
-type status =  {
-    rented: string,
-    inStock: string,
-    outStock: string
-}
+// fix: these "sub-types" should just be a union/collection of strings, instead of objects with fields. 
+type status = "rented" | "inStock" | "outStock"
 
-// maybe in-future make this dynamic
-type equipmentType = {
-    electronic: string,
-    stationary: string,
-    lab: string,
-    misc: string
-}
+// this can be made dynamic in the future by making the equipmentType field in the Item interface a string, and adding a validation function.
+type equipmentType = "electronic" | "stationary" | "lab" | "misc"
 
