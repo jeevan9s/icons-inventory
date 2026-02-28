@@ -14,6 +14,12 @@ export default function Home() {
         >
           auth test
         </button>
+        <button 
+          className="bg-neutral-800 hover:bg-neutral-700 text-white py-2 px-4 rounded-lg cursor-pointer"
+          onClick={() => router.push("/databasetesting")}
+        >
+          database test
+        </button>
       </div>
     </div>
   );
