@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from "react";
 import { getUserInfo } from "@/services/auth/authCallers";
+import authListener from "@/services/auth/utils/authListener";
 
 export default function AuthSuccessPage() {
   const [user, setUser] = useState<any>(null);
@@ -13,6 +14,7 @@ export default function AuthSuccessPage() {
       setUser(userInfo);
     }
     loadProfile();
+    authListener();
   }, []);
 
   return (

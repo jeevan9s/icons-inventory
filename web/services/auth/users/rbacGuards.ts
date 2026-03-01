@@ -1,0 +1,26 @@
+import { getUserProfile } from "./profile";
+import { Permission, Role } from "@/app/databasetesting/database.types";
+import { rolePermissions } from "@/app/databasetesting/database.types";
+
+export async function requireRole(userId: string, roles: Role | Role[]) {
+    const profile = await getUserProfile(userId)
+    if (!profile) throw new Error("profile not found")
+    
+    const allowedRoles = Array.isArray(roles) ? roles : [roles]
+    if (!allowedRoles.includes(profile.role)) {
+        throw new Error("unauthorized -> insufficient role");
+    }
+
+    return profile;
+}
+
+export async function requirePermission(userId: string, permission:Permission) {
+    const profile = await getUserProfile(userId)
+    if (!profile) throw new Error("profile not found")
+    
+        const permissions = rolePermissions[profile.role] || []
+        if (!permissions.includes(permission)) {
+            throw new Error(`missing permission ${permission}`)
+        }
+
+}

@@ -1,7 +1,6 @@
 "use client"; // must be a Client Component to use browser APIs
 import { createClient } from '@supabase/supabase-js'
 import { Database } from './database.types'
-import { randomInt } from 'crypto';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUB_KEY
