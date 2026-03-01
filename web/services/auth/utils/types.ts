@@ -1,15 +1,15 @@
+import { Role } from "@/app/databasetesting/database.types";
 import { loadEnvVar } from "./helpers";
 
-
-export type role = "admin" | "operator" | "dev";
-
-export interface user {
+export interface User {
     id: string;
-    email: string | undefined,
     name: string | undefined, 
-    lastSignIn?: string,
-    role:role;
+    email: string | undefined,
+    role:Role;
+    createdAt: string | undefined
 };
+
+
 
 // env vars
 // export const clientId = loadEnvVar("MS_CLIENT_ID")
