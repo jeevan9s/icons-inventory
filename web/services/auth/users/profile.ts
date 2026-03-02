@@ -1,48 +1,42 @@
-import { Role } from "@/app/databasetesting/database.types";
-import { createSupabaseClient } from "@/services/shared/utils";
+import { SupabaseClient } from "@supabase/supabase-js";
 import { User } from "../utils/types";
+import { Database } from "@/app/databasetesting/database.types";
 
-// verify that an auth'd user exists in the profiles table, if not, log them
-export async function ensureProfile(user: User) {
-  const supabase = createSupabaseClient()
-
-  let profile = await getUserProfile(user.id)
+export async function ensureProfile(user: User, supabaseClient: SupabaseClient<Database>) {
+  let profile = await getUserProfile(user.id, supabaseClient);
 
   if (!profile) {
-    const { data: insertedProfile, error } = await supabase
+    const { data: inserted, error } = await supabaseClient
       .from("Profiles")
-      .insert(
-        {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: (user.role ?? "Dev") as Role,
-        },
-      )
+      .upsert({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role ?? "Dev",
+      })
       .select()
-      .single()
+      .single();
 
     if (error) {
-        throw new Error("failed to create profile: " + error.message)
-        }
-
-            profile = insertedProfile
+      console.error("error inserting profile:", error);
+      throw error;
     }
+    profile = inserted;
+  }
+  return profile;
+}
 
-        return profile
-    }
-
-
-export async function getUserProfile(userId: string) {
-  const supabase = createSupabaseClient()
-
-  const { data: profile, error } = await supabase
+export async function getUserProfile(userId: string, supabaseClient: SupabaseClient<Database>) {
+  const { data: profile, error } = await supabaseClient
     .from("Profiles")
     .select("id, role, name, email")
     .eq("id", userId)
-    .maybeSingle()
+    .maybeSingle();
 
-  if (error) {console.error("getUserProfile error", error); return null}
+  if (error) {
+    console.error("getUserProfile error:", error);
+    return null;
+  }
 
   return profile;
 }

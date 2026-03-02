@@ -1,8 +1,7 @@
 // server-side auth
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
-import { User } from "@supabase/supabase-js";
-import { StaffUser, supabaseAnonKey, supabaseURL } from "./utils/types";
+import { User, supabaseAnonKey, supabaseURL } from "./utils/types";
 import { NextRequest, NextResponse } from "next/server";
 import { mapUser } from "./utils/mapUser";
 
@@ -22,7 +21,7 @@ export const getServerClient = async () => {
     )
 }
 
-export const getCurrentUser = async (): Promise<StaffUser | null> => {
+export const getCurrentUser = async (): Promise<User | null> => {
     const supabase = await getServerClient()
     const {data: {user}} = await supabase.auth.getUser()
     return user ? mapUser(user) : null
@@ -36,7 +35,7 @@ export const updateSession = async (request: NextRequest) => {
         cookies: {
             getAll: () => request.cookies.getAll(),
             setAll: (cookiesToSet) =>{
-                cookiesToSet.forEach(({name, value, options }) => request.cookies.set(name, value))
+                cookiesToSet.forEach(({name, value}) => request.cookies.set(name, value))
                 response = NextResponse.next({request})
                 cookiesToSet.forEach(({name, value, options}) => response.cookies.set(name, value, options))
             }
