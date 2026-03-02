@@ -1,4 +1,4 @@
-"use client"; // must be a Client Component to use browser APIs
+"use client"; 
 import { onLogin } from "@/services/auth/authCallers";
 import Navbar from "@/app/components/Navbar";
 import { Button } from "@/components/ui/button";
