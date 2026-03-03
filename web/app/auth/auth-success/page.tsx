@@ -2,17 +2,19 @@
 "use client"
 
 import { useEffect, useState } from "react";
-import { getUserInfo } from "@/services/auth/authCallers";
+import authListener from "@/services/auth/utils/authListener";
 
 export default function AuthSuccessPage() {
-  const [user, setUser] = useState<any>(null);
+const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
-    async function loadProfile() {
-      const userInfo = await getUserInfo();
-      setUser(userInfo);
-    }
-    loadProfile();
+    const subscription = authListener((profile) => {
+      setUser(profile);
+    });
+
+    return () => {
+      if (subscription) subscription.unsubscribe();
+    };
   }, []);
 
   return (

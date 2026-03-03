@@ -1,7 +1,7 @@
 // client-side auth
 
 import { createBrowserClient } from "@supabase/ssr";
-import { msTenantId, StaffUser, supabaseAnonKey, supabaseURL } from "./utils/types";
+import { msTenantId, supabaseAnonKey, supabaseURL, User } from "./utils/types";
 import { mapUser } from "./utils/mapUser";
 
 export const getBrowserClient = () => createBrowserClient(supabaseURL(), supabaseAnonKey());
@@ -24,7 +24,7 @@ export const logout = async () => {
     window.location.href = '/'
 }
 
-export async function populateUser(): Promise<StaffUser | null> {
+export async function populateUser(): Promise<User | null> {
     const supabase = getBrowserClient();
 
     try {
