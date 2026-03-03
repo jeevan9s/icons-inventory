@@ -11,7 +11,7 @@ export default function DatabaseTestingPage() {
     async function getAllData() {
         console.log("Testing database connection...");
         let { data, error } = await supabase
-        .from('Item Checkouts')
+        .from('Testing Table')
         .select('*')
         data?.forEach((row) => {
             console.log("Row:", row);
@@ -19,10 +19,34 @@ export default function DatabaseTestingPage() {
         console.log("Error:", error);
     }
 
+    async function addEntry(val: number) {
+        console.log("Adding entry");
+        const { data, error } = await supabase
+        .from('Testing Table')
+        .insert({value: val})
+        .select()
+        data?.forEach((row) => {
+            console.log("Row ", row);
+        });
+        console.log("Error: ",error);
+    }
+
+    async function deleteEntry(val: number) {
+        console.log("Removing Entry");
+        const { data, error } = await supabase
+        .from("Testing Table")
+        .delete()
+        .eq('value', val)
+        .select();
+        
+    }
+
     return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
         <h1>Database Testing Page</h1>
-        <button className="bg-neutral-800 hover:bg-neutral-700 text-white py-2 px-4 rounded-lg cursor-pointer" onClick={getAllData}>Test Database Connection</button>
+        <button className="bg-neutral-800 hover:bg-neutral-700 text-white py-2 px-4 rounded-lg cursor-pointer" onClick={getAllData}>Get All Data</button>
+        <button className="bg-neutral-800 hover:bg-neutral-700 text-white py-2 px-4 rounded-lg cursor-pointer" onClick={ () => addEntry(55)}>Add entry</button>
+        <button className="bg-neutral-800 hover:bg-neutral-700 text-white py-2 px-4 rounded-lg cursor-pointer" onClick={ () => deleteEntry(55)}>Delete entry</button>
     </div>
     );
 }
