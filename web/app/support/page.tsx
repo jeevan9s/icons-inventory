@@ -11,11 +11,11 @@ export default function Support() {
         <div className="flex flex-col md:flex-row items-start gap-10 text-center md:text-left">
           <div className="flex flex-col gap-4">
             <h1 className="font-thin text-4xl sm:text-5xl md:text-7xl lg:text-8xl text-black font-mp">
-              Support Page
+              Support 
             </h1>
 
             <h3 className="text-black/80 font-med font-mp text-base sm:text-lg md:text-xl lg:text-2xl">
-              *to be implemented
+              will include common operations/tutorials and a link to user manual (pdf)
             </h3>
           </div>
         </div>

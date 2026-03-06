@@ -1,5 +1,6 @@
-import { Role } from "@/app/databasetesting/database.types";
 import { loadEnvVar } from "./helpers";
+
+type Role = "Dev" | "Admin" | "Operator";
 
 export interface User {
     id: string;
@@ -24,4 +25,9 @@ export const msTenantId =  () => loadEnvVar("NEXT_PUBLIC_MS_TENANT_ID");
 
 export const devRedirectUri = () => loadEnvVar("NEXT_PUBLIC_DEV_REDIRECT_URI");
 export const prodRedirectUri = () => loadEnvVar("NEXT_PUBLIC_PROD_REDIRECT_URI");
+
+export const emailJSServiceID = () => loadEnvVar("NEXT_PUBLIC_EMAIL_JS_SERVICE_ID"); 
+export const emailJSPubID = () => loadEnvVar("NEXT_PUBLIC_EMAIL_JS_PUB_KEY");
+export const  emailJSTemplateID = () => loadEnvVar("NEXT_PUBLIC_EMAIL_JS_TEMPLATE_ID");
+
     

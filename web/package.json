@@ -10,6 +10,8 @@
   },
   "dependencies": {
     "@azure/msal-node": "^5.0.4",
+    "@emailjs/browser": "^4.4.1",
+    "@hookform/resolvers": "^5.2.2",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.97.0",
     "axios": "^1.13.5",
@@ -23,8 +25,10 @@
     "radix-ui": "^1.4.3",
     "react": "19.2.3",
     "react-dom": "19.2.3",
+    "react-hook-form": "^7.71.2",
     "tailwind-merge": "^3.5.0",
-    "web": "^0.0.2"
+    "web": "^0.0.2",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

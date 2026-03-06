@@ -5,6 +5,10 @@ const ENV_MAP: Record<string, string | undefined> = {
   NEXT_PUBLIC_MS_TENANT_ID: process.env.NEXT_PUBLIC_MS_TENANT_ID,
   NEXT_PUBLIC_DEV_REDIRECT_URI: process.env.NEXT_PUBLIC_DEV_REDIRECT_URI,
   NEXT_PUBLIC_PROD_REDIRECT_URI: process.env.NEXT_PUBLIC_PROD_REDIRECT_URI,
+  NEXT_PUBLIC_EMAIL_JS_SERVICE_ID: process.env.NEXT_PUBLIC_EMAIL_JS_SERVICE_ID, 
+  NEXT_PUBLIC_EMAIL_JS_PUB_KEY: process.env.NEXT_PUBLIC_EMAIL_JS_PUB_KEY, 
+  NEXT_PUBLIC_EMAIL_JS_TEMPLATE_ID: process.env.NEXT_PUBLIC_EMAIL_JS_TEMPLATE_ID, 
+
 };
 
 export function loadEnvVar(key: string, fallback?: string): string {
