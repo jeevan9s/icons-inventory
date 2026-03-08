@@ -14,12 +14,12 @@ const supabase = createClient<Database>(supabaseUrl!, supabaseKey!)
 //  For full functionality, ensure that database.types.ts is up to date.
 export async function getData<table_name extends keyof Database['public']['Tables'],column extends keyof Database['public']['Tables'][table_name]['Row']>(table: table_name, order: column, ascending: boolean, count?: number, begin?: number) {
     let ordString: string = order as string;
-    console.log(`Getting entries ${begin} to ${count} from ${table} ...`); // TODO remove this when testing completed
     let entries: Array<Object> = [];
     // get all entries
     if ((count === undefined || count === -1) && begin === undefined) {
-        const { count } = await supabase.from(table).select("", { count: 'exact'});
-        if (count == null) return; 
+        const { count, error } = await supabase.from(table).select("", { count: 'exact'});
+        if (error) console.error(error);
+        if (count == null) return entries; 
         for (let i = count; i >= 0; i-=1000) {
             let { data, error } = await supabase
             .from(table)
@@ -64,9 +64,9 @@ export async function getData<table_name extends keyof Database['public']['Table
     }
     // get all entries starting at begin
     else {
-        const { count } = await supabase.from(table).select("", { count: 'exact'});
-        if (count == null) return; 
-        console.log("count:", count)
+        const { count, error } = await supabase.from(table).select("", { count: 'exact'});
+        if (error) console.error(error);
+        if (count == null) return entries; 
         for (let i = begin!; i <= count-begin!; i+=1000) {
             let { data, error } = await supabase
             .from(table)
