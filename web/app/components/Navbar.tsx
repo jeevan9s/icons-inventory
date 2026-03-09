@@ -32,13 +32,14 @@ export default function Navbar({ pageType }: navbarProps ) {
             </Button>
           </Link>
           )}
-
          
+         {(pageType === "landing" || pageType === "home") && (
           <a target="_blank" rel="noopener noreferrer" href="https://www.engsoc.queensu.ca/services/educational/icons/">
             <Button className="px-3 py-1 bg-transparent rounded-lg text-white text-sm transition-transform duration-200 hover:bg-transparent hover:font-bold hover:scale-103 hover:cursor-pointer">
               About
             </Button>
           </a>
+          )}
 
           {(pageType === "main") && (
           <Link href="/support">

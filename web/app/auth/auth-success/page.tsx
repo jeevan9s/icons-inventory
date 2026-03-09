@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from "react";
 import authListener from "@/services/auth/utils/authListener";
+import Link from "next/link";
 
 export default function AuthSuccessPage() {
 const [user, setUser] = useState<any>(null);
@@ -43,12 +44,13 @@ const [user, setUser] = useState<any>(null);
           </p>
         )}
 
+        <Link href = "/../main/dashboard">
         <button
-          onClick={() => (window.location.href = "/")}
           className="mt-4 px-4 py-2 bg-zinc-900 text-white rounded-lg text-sm hover:bg-zinc-800 transition-colors"
         >
-          return
+          launch
         </button>
+        </Link>
       </div>
     </div>
   );
