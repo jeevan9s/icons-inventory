@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import Navbar from "@/app/components/Navbar";
 import Link from "next/link";
 
-export default function Home() {
+export default function Dashboard() {
   return (
     <div className="min-h-screen flex flex-col items-center  bg-gray-300 select-none">
       <Navbar pageType="main" />

@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import Navbar from "../../components/Navbar";
 import Link from "next/link";
 
-export default function UnauthorizedAccess() {
+export default function NotFoundError() {
   return (
     <div className="min-h-screen flex flex-col items-center  bg-gray-300 select-none">
       <Navbar pageType="error" />
@@ -11,11 +11,15 @@ export default function UnauthorizedAccess() {
         <div className="flex flex-col md:flex-row items-center gap-10 text-center md:text-center">
           <div className="flex flex-col gap-4">
             <h1 className="font-thin text-4xl sm:text-5xl md:text-7xl lg:text-8xl text-black font-mp">
-              Unauthorized Access
+              404 Error
             </h1>
 
             <h3 className="text-black/80 font-med font-mp text-base sm:text-lg md:text-xl lg:text-2xl">
-                You do not have permission to view this page. Contact developers or admins if you believe this is an error.
+              Page not found
+            </h3>
+
+            <h3 className="text-black/50 font-thin font-mp text-base sm:text-sm md:text-md lg:text-lg">
+              Return to the homepage or check the URL.
             </h3>
 
             <Link href="/">
