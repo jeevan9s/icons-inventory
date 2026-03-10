@@ -10,7 +10,7 @@
 
 ### Technologies 
 * Standard React library (useEffect, useState)
-* [Internal Supabase Lib](../lib/database-functions/)
+* [Internal Supabase Lib](../database-functions/)
 
 ### Documentation
 * [Supabase JS Reference](https://supabase.com/docs/reference/javascript/introduction)
