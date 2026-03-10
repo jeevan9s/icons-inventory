@@ -6,8 +6,6 @@
 
 #### insert() - Amaan
 
-#### delete() - Spencer
-
 #### update() - Amaan
 
 #### export() - Spencer
@@ -17,9 +15,10 @@
 ### Implemented
 
 #### getData()
+
 This function is implemented as: `getData(table, order, ascending, count?, begin?)`.
 
-#### Parameters
+##### Parameters
 
 - `table` is a `string` representing the name of a table to get data from.
 - `order` is a `string` representing the column to sort the return by.
@@ -31,6 +30,19 @@ When the function is called without any optional parameters it will return all e
 When specifying `count` but not `begin`, it will return `count` entry ordered as defined with `order` and `ascending`.
 When specifying both `count` and `begin` it will return count entry starting at `begin` ordered as defined with `order` and `ascending`. This also works when specifying `count` as `-1`, returning all entries starting from `begin` (inclusive).
 
-#### Returns
+##### Returns
 
 getData() will return an `Array<Object>` object containing the specified entries. It may return an empy `Array<Object>` if there was either an error, or supabase simply did not have any entries in the specified table.
+
+#### deleteById()
+
+This function is implemented as: `getById(table, id)`
+
+##### Parameters
+
+- `table` is a `string` representing the name of a table to get data from.
+- `id` is a `number` representing the id of the entry you are deleting.
+
+##### Returns
+
+Does not return anything, however does error to the console upon supabase failure.
