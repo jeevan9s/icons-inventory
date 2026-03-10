@@ -93,12 +93,12 @@ export async function addEntry(val: number) {
     });
 }
 
-export async function deleteEntry(val: number) {
-    console.log("Removing Entry");
+export async function deleteById<table_name extends keyof Database['public']['Tables'], identificationNumber extends Database['public']['Tables'][table_name]['Row']['id']>
+ (table: table_name, id: identificationNumber) {
     const { data, error } = await supabase
-    .from("Testing Table")
+    .from(table)
     .delete()
-    .eq('value', val)
-    .select();
-    
+    .eq('id', id as any);
+    if (error) console.error(error);
+    if (data) console.log(data);
 }
