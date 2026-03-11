@@ -93,6 +93,7 @@ export async function addEntry(val: number) {
     });
 }
 
+//  Delete by id deletes an entry from the specified table based on it's unique id number.
 export async function deleteById<table_name extends keyof Database['public']['Tables'], identificationNumber extends Database['public']['Tables'][table_name]['Row']['id']>
  (table: table_name, id: identificationNumber) {
     const { data, error } = await supabase
@@ -101,4 +102,32 @@ export async function deleteById<table_name extends keyof Database['public']['Ta
     .eq('id', id as any);
     if (error) console.error(error);
     if (data) console.log(data);
+}
+
+//  Export table function takes in a name of a table in the database and exports it to the browser downloader
+//  as a table_name.csv
+export async function exportTable<table_name extends keyof Database['public']['Tables']> (table: table_name) {
+    let entries: Array<Object> = await getData(table, 'id', true, -1);
+    if (entries.length === 0) {
+        console.log("No entries to export");
+        return;
+    }
+    let headers: string[] = Object.keys(entries[0]);
+    let csvContent: string = headers.join(",") + "\n";
+    entries.forEach((entry) => {
+        Object.values(entry).forEach((value) => {
+            csvContent += `"${value}",`;
+        })
+        csvContent += "\n";
+    });
+    // Download the CSV file
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = `${table}.csv`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
+    URL.revokeObjectURL(url);
 }
