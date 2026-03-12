@@ -10,6 +10,10 @@
 
 #### import() - Amaan
 
+#### getDataFiltered() - Spencer
+
+table, filter col, search term
+
 ### Implemented
 
 #### getData()
