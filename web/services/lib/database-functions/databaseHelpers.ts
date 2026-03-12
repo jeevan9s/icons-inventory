@@ -1,4 +1,5 @@
 "use client"; // must be a Client Component to use browser APIs
+import { da } from 'zod/v4/locales';
 import { Database } from './database.types';
 import { createClient } from '@supabase/supabase-js'
 
@@ -83,15 +84,43 @@ export async function getData<table_name extends keyof Database['public']['Table
 
 //  Gets data entries from a specified table where their column 'searchBy' has the value of
 //  qualifier.
-export async function getDataFiltered<table_name extends keyof Database['public']['Tables'],column extends Database['public']['Tables'][table_name]['Row']> (table: table_name, searchBy: keyof column, qualifier: column[keyof column]) {
-    let entries: Array<object> = [];
-    const { data, error } = await supabase
-    .from(table)
-    .select("*")
-    .eq(searchBy as string, qualifier as any);
-    if (error) console.error(error);
-    if (data) data.forEach((entry) => entries = entries.concat(entry));
-    return entries;
+export async function getDataFiltered<table_name extends keyof Database['public']['Tables'],column extends Database['public']['Tables'][table_name]['Row']> (table: table_name, filterBy: keyof column, qualifier: "e" | "gt" | "lt" | "gte" | "lte", filterTerm: column[keyof column]) {
+    if (qualifier === "e") {
+        const { data, error } = await supabase
+        .from(table)
+        .select("*")
+        .eq(filterBy as string, filterTerm as any);
+        if (error) console.error(error);
+        return data || [];
+    } else if (qualifier === "gt") {
+        const { data, error } = await supabase
+        .from(table)
+        .select("*")
+        .gt(filterBy as string, filterTerm as any);
+        if (error) console.error(error);
+        return data || [];
+    } else if (qualifier === "lt") {
+        const { data, error } = await supabase
+        .from(table)
+        .select("*")
+        .lt(filterBy as string, filterTerm as any);
+        if (error) console.error(error);
+        return data || [];
+    } else if (qualifier === "gte") {
+        const { data, error } = await supabase
+        .from(table)
+        .select("*")
+        .gte(filterBy as string, filterTerm as any);
+        if (error) console.error(error);
+        return data || [];
+    } else if (qualifier === "lte") {
+        const { data, error } = await supabase
+        .from(table)
+        .select("*")
+        .lte(filterBy as string, filterTerm as any);
+        if (error) console.error(error);
+        return data || [];
+    }
 }
 
 export async function addEntry(val: number) {
