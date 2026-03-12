@@ -131,3 +131,5 @@ export async function exportTable<table_name extends keyof Database['public']['T
     document.body.removeChild(anchor);
     URL.revokeObjectURL(url);
 }
+
+

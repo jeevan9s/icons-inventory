@@ -15,7 +15,7 @@ type ViewMode = 'table' | 'board' // TODO
 
 // design notes
 /*
-try 2 get strucrtew  liwe this for table viwe:  (TODO)
+try 2 get strucrtew  liwe this for able viwe:  (TODO)
 
 [    ] [     ]  [     ]  [     ]
 |                               |              |
