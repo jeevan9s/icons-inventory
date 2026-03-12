@@ -10,8 +10,8 @@ type navbarProps = {
 export default function Navbar({ pageType }: navbarProps ) {
  
     return (
-    <div className="flex justify-between items-center px-6 py-4 z-1">
-      <div className="absolute left-5 right-5 mt-10 w-40 sm:w-52 md:w-64">
+    <div className="flex justify-between items-center px-6 py-4 h-18 sm:h-22 md:h-24 z-1 bg-neutral-100">
+      <div className="left-5 right-5 w-40 sm:w-52 md:w-64">
         <a href="https://www.engsoc.queensu.ca/" rel="noopener noreferrer" target="_blank">
         <Image
           src="/engsoc_logo.png"
@@ -23,7 +23,7 @@ export default function Navbar({ pageType }: navbarProps ) {
         </a>
       </div>
 
-      <div className="hidden sm:flex items-center p-1.5 bg-zinc-800 rounded-full shadow-lg border border-white/5">
+      <div className="hidden absolute left-1/2 -translate-x-1/2 mx-auto sm:flex items-center p-1.5 bg-zinc-800 rounded-full shadow-lg border border-white/5">
         <div className="flex gap-2 items-center px-4 py-2 bg-white/10 rounded-full">
             {pageType === "landing" || pageType === "main" && (
             <Link href="/">

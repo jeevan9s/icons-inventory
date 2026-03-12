@@ -8,12 +8,14 @@ console.log("yoyo") // mess around with this, works pretty much like a print sta
 FUNCTION PROTOTYPES:
 
 ** in general, use regular/default export functions for core logic (synchronous) that doesn't require API calls. (i.e. computing, validation, sorting
-** use sync functions for cases that require databases, API calls (asynchronous); they allow you to _await_ a function with a "promise" return type, very useful - highly suggest researching briefly on sync vs async functions.
+** use async functions for cases that require databases, API calls (asynchronous); they allow you to _await_ a function with a "promise" return type, very useful - highly suggest researching briefly on sync vs async functions.
 
 // regular function: performs synchronous logic, returns a value
 export function function_name(param1: type, param2: type): return_type {
   implementation
 }
+
+
 
 // default export function: main utility or entry point from a file
 export default function default_function(param1: type): return_type {

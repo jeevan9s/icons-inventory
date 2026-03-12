@@ -4,7 +4,9 @@
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.98.0",
     "dotenv": "^17.2.4",
+    "framer-motion": "^12.35.2",
     "path": "^0.12.7",
+    "react-feather": "^2.0.10",
     "ts-node": "^10.9.2"
   },
   "devDependencies": {

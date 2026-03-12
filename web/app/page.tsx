@@ -5,7 +5,7 @@ import Link from "next/link";
 
 export default function Home() {
   return (
-    <div className="min-h-screen flex flex-col items-center  bg-gray-300 select-none">
+    <div className="min-h-screen flex flex-col items-center bg-neutral-100 select-none">
       <Navbar pageType="home" />
       <div className="flex flex-1 items-center justify-center px-6">
         <div className="flex flex-col md:flex-row items-start gap-10 text-center md:text-left">

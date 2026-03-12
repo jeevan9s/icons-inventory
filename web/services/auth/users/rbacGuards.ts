@@ -1,5 +1,4 @@
 import { getUserProfile } from "./profile";
-import { Permission, Role } from "@/app/databasetesting/database.types";
 import { rolePermissions } from "@/app/databasetesting/database.types";
 
 export async function requireRole(userId: string, roles: Role | Role[]) {
