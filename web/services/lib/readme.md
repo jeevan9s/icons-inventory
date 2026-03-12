@@ -8,15 +8,13 @@
 
 #### update() - Amaan
 
-#### export() - Spencer
-
 #### import() - Amaan
 
 ### Implemented
 
 #### getData()
 
-This function is implemented as: `getData(table, order, ascending, count?, begin?)`.
+This function is implemented as: `getData(table, order, ascending, count?, begin?)`. It is used to get a **set** of entries from the specified table.
 
 ##### Parameters
 
@@ -36,7 +34,7 @@ getData() will return an `Array<Object>` object containing the specified entries
 
 #### deleteById()
 
-This function is implemented as: `getById(table, id)`
+This function is implemented as: `getById(table, id)`. It is used for the targeted removal of entries from a specific table.
 
 ##### Parameters
 
@@ -46,3 +44,16 @@ This function is implemented as: `getById(table, id)`
 ##### Returns
 
 Does not return anything, however does error to the console upon supabase failure.
+
+#### export()
+
+The function is implemented as `export(table)`
+
+##### Parameters
+
+- `table` is a string representing the table to export from supabase
+
+##### Returns
+
+Does not return anything, however it does print a success mesage to the console and automatically trigger the file download.
+
