@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
 type navbarProps = {
-    pageType: "home" | "landing" | "main"
+    pageType: "home" | "landing" | "main" | "error"
 }
 
 export default function Navbar({ pageType }: navbarProps ) {
@@ -25,22 +25,23 @@ export default function Navbar({ pageType }: navbarProps ) {
 
       <div className="hidden sm:flex items-center p-1.5 bg-zinc-800 rounded-full shadow-lg border border-white/5">
         <div className="flex gap-2 items-center px-4 py-2 bg-white/10 rounded-full">
-            {pageType !== "home" && (
+            {pageType === "landing" || pageType === "main" && (
             <Link href="/">
             <Button className="px-3 py-1 bg-transparent rounded-lg text-white text-sm transition-transform duration-200 hover:bg-transparent hover:font-bold hover:scale-103 hover:cursor-pointer">
               Home
             </Button>
           </Link>
           )}
-
          
+         {(pageType === "landing" || pageType === "home" || pageType === "error") && (
           <a target="_blank" rel="noopener noreferrer" href="https://www.engsoc.queensu.ca/services/educational/icons/">
             <Button className="px-3 py-1 bg-transparent rounded-lg text-white text-sm transition-transform duration-200 hover:bg-transparent hover:font-bold hover:scale-103 hover:cursor-pointer">
               About
             </Button>
           </a>
+          )}
 
-          {(pageType === "main") && (
+          {(pageType === "main" || pageType === "error") && (
           <Link href="/support">
             <Button className="px-3 py-1 bg-transparent rounded-lg text-white text-sm transition-transform duration-200 hover:bg-transparent hover:font-bold hover:scale-103 hover:cursor-pointer">
               Support
@@ -59,6 +60,14 @@ export default function Navbar({ pageType }: navbarProps ) {
         <Link href="/login">
         <Button className="px-3 m-3 py-1 bg-white/90 rounded-xl text-black text-sm transition-transform duration-200 hover:bg-white hover:font-bold hover:scale-105 hover:cursor-pointer">
           Launch
+        </Button>
+        </Link>
+        )}
+
+         {(pageType === "error") && (
+        <Link href="/">
+        <Button className="px-3 m-3 py-1 bg-white/90 rounded-xl text-black text-sm transition-transform duration-200 hover:bg-white hover:font-bold hover:scale-105 hover:cursor-pointer">
+          Return
         </Button>
         </Link>
         )}
