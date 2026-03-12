@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/services/lib/hooks/useAuth";
+import Link from "next/link";
 
 
 type sbProps = {
@@ -189,7 +190,10 @@ export default function Sidebar({
           </AnimatePresence>
 
           <nav className="flex flex-col gap-1 mb-5">
-            {tableItems.map(({ icon: Icon, label }) => (
+            {tableItems.map(({ icon: Icon, label }) => {
+              const href = label === "Loans" ? "/data/loans" : "/data/inventory";
+              return (
+              <Link href={href}>
               <motion.button
                 layout
                 key={label}
@@ -212,7 +216,9 @@ export default function Sidebar({
                   )}
                 </AnimatePresence>
               </motion.button>
-            ))}
+              </Link>
+              );
+            })}
           </nav>
 
           <AnimatePresence>
