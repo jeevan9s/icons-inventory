@@ -3,7 +3,7 @@ import Navbar from "@/app/components/Navbar";
 
 export default function AuthErrorPage() {
   return (
-    <div className="min-h-screen flex flex-col items-center bg-gray-300 select-none">
+    <div className="min-h-screen flex flex-col items-center bg-neutral-100 select-none">
       <Navbar pageType="main" />
 
       <div className="flex flex-1 items-center justify-center px-6">

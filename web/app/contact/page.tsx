@@ -4,7 +4,7 @@ import { ContactForm } from "../components/ContactForm";
 
 export default function Contact() {
 return (
-  <div className="min-h-screen flex flex-col items-center bg-gray-300 select-none">
+  <div className="min-h-screen flex flex-col items-center bg-neutral-100 select-none">
     <Navbar pageType="landing" />
 
     <div className="flex flex-1 items-center justify-center px-4 sm:px-6 lg:px-8 w-full">
