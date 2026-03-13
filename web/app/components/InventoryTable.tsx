@@ -14,17 +14,20 @@ import {
 } from '@/components/ui/table'
 import { Input } from "@/components/ui/input"
 import { motion,  } from 'framer-motion'
+import { getStockStatus } from "@/services/lib/hooks/helpers"
 
 
 // representation of a Supabase row.
 // status will be dynamic through function implementation in lib/helpers
 export type InventoryRow = {
-  id: string
+  id: number
   name: string
-  totalStock: number
-  netStock: number
-  equipmentType: string
-  status: string
+  total_stock: number
+  net_stock: number
+  item_properties: {
+    equipment_type?: string
+    [key: string]: any
+  } | null
 }
 
 // uses headless tanstack to get a Table object, and then maps to frontend with components for rendering
@@ -61,24 +64,25 @@ export default function InventoryTable({ data }: { data: InventoryRow[] }) {
       cell: ({ getValue }) => <span className="text-neutral-800 font-medium">{getValue() as string}</span>,
     },
     {
-      accessorKey: 'totalStock',
+      accessorKey: 'total_stock',
       header: ({ column }) => <ColHeader label="Total" type="int" isSorted={column.getIsSorted()} onSort={column.getToggleSortingHandler()!} />,
       cell: ({ getValue }) => <span className="text-neutral-600">{getValue() as number}</span>,
     },
     {
-      accessorKey: 'netStock',
+      accessorKey: 'net_stock',
       header: ({ column }) => <ColHeader label="Available" type="int" isSorted={column.getIsSorted()} onSort={column.getToggleSortingHandler()!} />,
       cell: ({ getValue }) => <span className="text-neutral-600">{getValue() as number}</span>,
     },
     {
-      accessorKey: 'equipmentType',
+      id: 'equipment_type',
+      accessorFn: (row) => row.item_properties?.equipment_type ?? '—',
       header: ({ column }) => <ColHeader label="Type" type="text" isSorted={column.getIsSorted()} onSort={column.getToggleSortingHandler()!} />,
       cell: ({ getValue }) => <span className="text-neutral-600">{getValue() as string}</span>,
     },
     {
       accessorKey: 'status',
       header: ({ column }) => <ColHeader label="Status" type="text" isSorted={column.getIsSorted()} onSort={column.getToggleSortingHandler()!} />,
-      cell: ({ getValue }) => <StatusBadge status={getValue() as string} />,
+      cell: ({ row }) => <StatusBadge status={getStockStatus(row.original)} />,
     },
 
     // properties button

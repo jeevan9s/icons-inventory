@@ -4,26 +4,23 @@ import Layout from '@/app/components/Layout'
 import { useState } from 'react'
 import { Plus, Package, ClipboardList, ListTodo, AlertTriangle } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { InventoryRow } from '@/app/components/InventoryTable'
-import { LoanRow } from '@/app/components/LoansTable'
 import InventoryTable from '@/app/components/InventoryTable'
 import LoansTable from '@/app/components/LoansTable'
 import StatCard from '@/app/components/StatCard'
+import { useGetRows } from '@/services/lib/hooks/useDatabase'
 
 type Tab = 'inventory' | 'loans'
 
-type DashboardProps = {
-  inventoryData?: InventoryRow[]
-  loansData?: LoanRow[]
-}
-
-export default function Dashboard({ inventoryData = [], loansData = [] }: DashboardProps) {
+export default function Dashboard() {
   const [tab, setTab] = useState<Tab>('inventory')
 
+  const { data: inventoryData = [] } = useGetRows("Stock")
+  const { data: loansData = [] } = useGetRows("Loans")
+
   const totalItems = inventoryData.length
-  const activeLoans = loansData.filter(l => !l.timeIn).length
-  const returned = loansData.filter(l => !!l.timeIn).length
-  const lowStock = inventoryData.filter(i => i.status === 'Low Stock' || i.status === 'Out of Stock').length
+  const activeLoans = loansData.filter((l: any) => !l.timeIn).length
+  const returned = loansData.filter((l: any) => !!l.timeIn).length
+  const lowStock = inventoryData.filter((i: any) => i.status === 'Low Stock' || i.status === 'Out of Stock').length
 
   return (
     <Layout>

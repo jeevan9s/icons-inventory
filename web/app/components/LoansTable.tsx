@@ -22,12 +22,12 @@ export type LoanRow = {
   id: string
   item: string
   signee: string
-  studentNumber: string
-  studentName: string
+  student_id: string
+  student_name: string
   location: string
   notes: string
-  timeOut: string
-  timeIn: string
+  time_out: string
+  time_in: string
   status: string
 }
 
