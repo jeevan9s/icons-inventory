@@ -106,7 +106,7 @@ export default function Sidebar({
         onMouseLeave={() =>
           !disableHoverZones && !isLocked && setIsHovered(false)
         }
-        className={`fixed z-[60] flex flex-col left-0 bottom-0 ${isLocked ? "border-r border-neutral-200" : ""}`}
+        className={`fixed z-[60] flex flex-col left-0 bottom-0 rounded-tr-xl ${isLocked ? "border-r border-neutral-200" : ""}`}
         style={{
           top: NAVBAR_HEIGHT,
           backgroundColor: "rgb(255, 255, 255)",
@@ -125,7 +125,7 @@ export default function Sidebar({
               className="p-1 rounded hover:bg-neutral-100 hover:cursor-pointer transition-all duration-200 ease-in-out hover:scale-105"
             >
               {isLocked ? (
-                <ChevronsLeft size={18} className="md:w-5 md:h-5" />
+                <ChevronsLeft size={18} className="md:w-5 md:h-5 text-black/70" />
               ) : (
                 <PanelLeft size={18} className="md:w-5 md:h-5" />
               )}
@@ -261,6 +261,21 @@ export default function Sidebar({
               </motion.button>
             ))}
           </nav>
+
+                    <AnimatePresence>
+            {showLabels && (
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="font-mp text-xs md:text-sm text-neutral-400 uppercase tracking-widest mt-78 px-1"
+              >
+                User
+              </motion.p>
+            )}
+          </AnimatePresence>
+
 
           <div className="mt-auto pt-4 border-t border-neutral-100">
             <AnimatePresence>
