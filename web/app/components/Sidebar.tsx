@@ -120,7 +120,7 @@ export default function Sidebar({
   );
 
   const navItemClass = (label: string) =>
-    `flex items-center rounded-lg font-mp transition-colors text-sm md:text-base
+    `flex items-center rounded-lg font-mp transition-colors text-sm md:text-base hover:cursor-pointer w-full
     ${iconOnly ? "justify-center py-2.5" : "gap-3 px-3 py-2.5"}
     ${active === label ? "bg-[#d4e6c3] text-neutral-800" : "text-neutral-600 hover:bg-[#d4e6c3]/50"}`;
 
