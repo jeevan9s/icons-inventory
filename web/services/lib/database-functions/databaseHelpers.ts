@@ -1,5 +1,4 @@
 "use client"; // must be a Client Component to use browser APIs
-import { da } from 'zod/v4/locales';
 import { Database } from './database.types';
 import { createClient } from '@supabase/supabase-js'
 
