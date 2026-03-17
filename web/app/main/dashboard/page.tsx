@@ -2,7 +2,7 @@
 
 import Layout from '@/app/components/Layout'
 import { useState } from 'react'
-import { Plus, Package, ClipboardList, ListTodo, AlertTriangle } from 'lucide-react'
+import { Plus, Package, ClipboardList, ListTodo, AlertTriangle, Download } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import InventoryTable from '@/app/components/InventoryTable'
 import LoansTable from '@/app/components/LoansTable'
@@ -15,7 +15,7 @@ type Tab = 'inventory' | 'loans'
 export default function Dashboard() {
   const {useGetRows, useDeleteRow, useExport} = useDatabase(); // get hooks from lib/hooks/useDatabase
 
-  const [tab, setTab] = useState<Tab>('inventory')
+  const [tab, setTab] = useState<Tab>('loans')
 
   const { data: inventoryData = [] } = useGetRows("Stock")
   const { data: loansData = [] } = useGetRows("Loans")
@@ -41,7 +41,7 @@ export default function Dashboard() {
           <div className="flex flex-col min-w-0 xl:flex-[2] border border-neutral-100 rounded-2xl overflow-hidden bg-white min-h-[500px] xl:min-h-0">
             <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-neutral-100 gap-3">
               <div className="flex items-center gap-1 bg-neutral-100 rounded-lg p-1">
-                {(['inventory', 'loans'] as Tab[]).map(t => (
+                {(['loans', 'inventory'] as Tab[]).map(t => (
                   <button
                     key={t}
                     onClick={() => setTab(t)}
@@ -52,10 +52,17 @@ export default function Dashboard() {
                   </button>
                 ))}
               </div>
+<div className="flex flex-row gap-2">
+              <button className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 sm:py-2.5 bg-neutral-800 text-white text-xs sm:text-sm rounded-xl hover:cursor-pointer hover:bg-neutral-700 hover:scale-105 transition-colors font-mp whitespace-nowrap">
+                <Download size={13} /> Export 
+              </button>
+
               <button className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 sm:py-2.5 bg-neutral-800 text-white text-xs sm:text-sm rounded-xl hover:cursor-pointer hover:bg-neutral-700 hover:scale-105 transition-colors font-mp whitespace-nowrap">
                 <Plus size={13} /> Add Item
               </button>
             </div>
+
+</div>
 
             <div className="flex-1 min-h-0 overflow-hidden">
               <AnimatePresence mode="wait">
