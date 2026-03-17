@@ -13,7 +13,7 @@ export const loginWithMicrosoft = async () => {
         options: {
             scopes: 'openid email profile',
             redirectTo: 'http://localhost:3000/api/auth/callback', // for dev
-            queryParams: {tenant: msTenantId()}  
+            queryParams: {tenant: msTenantId(), prompt: 'select_account'}  
         }
     })
 }
