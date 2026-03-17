@@ -1,13 +1,18 @@
 // @/services/lib/hooks/useDatabase.ts
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { deleteById } from "../database-functions/databaseHelpers"; 
+import { deleteById, exportTable } from "../database-functions/databaseHelpers"; 
 import { TableName } from "./types";
 import { getData } from "../database-functions/databaseHelpers";
+import { Table } from "@tanstack/react-table";
+import { table } from "console";
 
 // query -> read/fetch data
 // mutate -> update, create, and delete data
 
-export const useGetRows = (tableName: TableName) => {
+export const useDatabase = () => {
+
+
+ const useGetRows = (tableName: TableName) => {
     return useQuery({
         queryKey: [tableName],
         queryFn: async () => {
@@ -18,7 +23,7 @@ export const useGetRows = (tableName: TableName) => {
     });
 };
 
-export const useDeleteRow = (tableName: TableName) => {
+ const useDeleteRow = (tableName: TableName) => {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -32,8 +37,28 @@ export const useDeleteRow = (tableName: TableName) => {
     onError: (error, id) => {
       console.error(`deletion failed for item #${id}:`, error.message);
     }
-  });
-};
+  })
+}
+
+const useExport = (tableName: TableName) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (tableName: TableName) => exportTable(tableName),
+    
+    onSuccess: (data, id) => {
+      queryClient.invalidateQueries({queryKey: [tableName]}); 
+      console.log(`exported from ${tableName}`);
+    }, 
+  
+    onError: (error, id) => {
+      console.error(`export failed for table ${tableName}:`, error.message)
+    }
+    })
+}
+
+return {useGetRows, useDeleteRow, useExport}
+
+}
 
 // Leo TODO
 // useRowInsert - this requires Amaan's implementation, so I'd get started on useRowFiltred first since the function is already implemented. 
@@ -52,4 +77,5 @@ parameters needed: table name (same as all functions), column (string), and qual
 
 // Jeevan TODO
 // useRowUpdate
+// useExport
 
