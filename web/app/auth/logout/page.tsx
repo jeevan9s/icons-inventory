@@ -4,13 +4,13 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/app/components/Navbar";
 
-export default function AuthSuccessPage() {
+export default function SignOutPage() {
   const router = useRouter();
 
   useEffect(() => {
     const timer = setTimeout(() => {
       router.push("/");
-    }, 5000);
+    }, 3000);
     return () => clearTimeout(timer);
   }, []);
 

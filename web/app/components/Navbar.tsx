@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
 type navbarProps = {
-    pageType: "home" | "landing" | "main" | "error"
+    pageType: "home" | "landing" | "main" | "error" | "dashboard"
 }
 
 export default function Navbar({ pageType }: navbarProps ) {
@@ -26,7 +26,7 @@ export default function Navbar({ pageType }: navbarProps ) {
       <div className="hidden absolute left-1/2 -translate-x-1/2 mx-auto sm:flex items-center p-1.5 bg-zinc-800 rounded-full shadow-lg border border-white/5">
         <div className="flex gap-2 items-center px-4 py-2 bg-white/10 rounded-full">
             {pageType === "landing" || pageType === "main" && (
-            <Link href="/">
+            <Link href="/main/dashboard">
             <Button className="px-3 py-1 bg-transparent rounded-lg text-white text-sm transition-transform duration-200 hover:bg-transparent hover:font-bold hover:scale-103 hover:cursor-pointer">
               Home
             </Button>
@@ -54,6 +54,7 @@ export default function Navbar({ pageType }: navbarProps ) {
               Contact
             </Button>
           </Link>
+          
         </div>
         
         {(pageType === "landing" || pageType === "home") &&  (
