@@ -1,4 +1,6 @@
 "use client"; // must be a Client Component to use browser APIs
+
+import Papa from "papaparse";
 import { Database } from './database.types';
 import { createClient } from '@supabase/supabase-js'
 
@@ -81,17 +83,6 @@ export async function getData<table_name extends keyof Database['public']['Table
     }
 }
 
-export async function addEntry(val: number) {
-    console.log("Adding entry");
-    const { data, error } = await supabase
-    .from('Testing Table')
-    .insert({value: val})
-    .select()
-    if (error) console.error(error);
-    data?.forEach((row) => {
-        console.log("Row ", row);
-    });
-}
 
 //  Delete by id deletes an entry from the specified table based on it's unique id number.
 export async function deleteById<table_name extends keyof Database['public']['Tables'], identificationNumber extends Database['public']['Tables'][table_name]['Row']['id']>
@@ -130,4 +121,68 @@ export async function exportTable<table_name extends keyof Database['public']['T
     anchor.click();
     document.body.removeChild(anchor);
     URL.revokeObjectURL(url);
+}
+
+export async function insertLoanItem(data: Database["public"]["Tables"]["Loan Items"]["Insert"]) {
+  const { data: insertedData, error } = await supabase
+    .from("Loan Items")
+    .insert(data)
+    .select();
+
+  if (error) {
+    console.error("Error inserting loan item:", error);
+    return null;
+  }
+
+  return insertedData;
+}
+
+export async function updateLoanItem(id: number, updatedData: Database["public"]["Tables"]["Loan Items"]["Update"]) {
+  const { data, error } = await supabase
+    .from("Loan Items")
+    .update(updatedData)
+    .eq("id", id)
+    .select();
+
+  if (error) {
+    console.error("Error updating loan item:", error);
+    return null;
+  }
+
+  return data;
+}
+
+export async function importCSV<table_name extends keyof Database["public"]["Tables"]>(table: table_name,file: File) {
+  const text = await file.text();
+
+  const parsed = Papa.parse<Database["public"]["Tables"][table_name]["Insert"]>(text, {
+    header: true,
+    skipEmptyLines: true,
+    dynamicTyping: true
+  });
+
+  if (parsed.errors.length > 0) {
+    console.error("CSV parse errors:", parsed.errors);
+    return null;
+  }
+
+  const rows = parsed.data as Database["public"]["Tables"][table_name]["Insert"][];
+
+  if (rows.length === 0) {
+    console.log("CSV file has no data."); 
+    return null;
+  }
+
+  const { data, error } = await supabase
+    .from(table)
+    .insert(rows as any)
+    .select();
+
+  if (error) {
+    console.error("Error importing CSV:", error);
+    return null;
+  }
+
+  console.log(`Successfully imported CSV into ${String(table)}`, data);
+  return data;
 }
