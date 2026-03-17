@@ -62,9 +62,57 @@ return {useGetRows, useDeleteRow, useExport}
 
 // Leo TODO
 // useRowInsert - this requires Amaan's implementation, so I'd get started on useRowFiltred first since the function is already implemented. 
+export const useRowInsert = (tableName: TableName, row: string) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => insert(tableName, row),
+
+    onSuccess: (data, id) => {
+      queryClient.invalidateQueries({queryKey:[tableName]});
+      console.log(`Inserted ${row} into ${tableName}`);
+    },
+
+    onError: (error, id) => {
+      console.error(`insert failed for table ${tableName}`, error.message)
+    }
+  })
+}
 
 // useRowFiltered
+export const useRowFiltered = (tableName: TableName, column: string, qualifier: filterQualifier) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => {
+      return getDataFiltered(table, column, qualifier)
+    },
 
+    onSuccess: (data, id ) => {
+      queryClient.invalidateQueries({queryKey: [tableName]});
+      console.log(`Filtered ${table} for ${column} ${qualifier}`);
+    },
+
+    onError: (error, id) => {
+      console.error(`Filter failed for ${column} ${qualifier}:` , error.message);
+    }
+  });
+};
+
+export const useRowFiltered2 = (tableName: TableName, column: string, qualifier: filterQualifier) => {
+  const queryClient = useQueryClient();
+  return useQuery({
+    queryKey: [tableName], 
+    queryFn: async () => {
+      const data = await getDataFiltered(table, column, qualifier);
+      console.log(`Filtered ${table} for ${column} ${qualifier}`);
+      if (!data) throw new Error(`Filter failed for ${column} ${qualifier}:` )
+      return data 
+    },
+    
+  })
+}
+
+
+export type filterQualifier = "e" | "gt" | "lt" | "gte" | "lte" ;
 /*
 use Spencer's "getDataFiltered()"" function for the mutation function (mutationFn) : , it is already imported at the top - but go check it out cause it'll make implementation easier
 parameters needed: table name (same as all functions), column (string), and qualifier 
