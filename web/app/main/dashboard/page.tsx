@@ -7,11 +7,14 @@ import { motion, AnimatePresence } from 'framer-motion'
 import InventoryTable from '@/app/components/InventoryTable'
 import LoansTable from '@/app/components/LoansTable'
 import StatCard from '@/app/components/StatCard'
-import { useGetRows } from '@/services/lib/hooks/useDatabase'
+import { useDatabase } from '@/services/lib/hooks/useDatabase'
 
 type Tab = 'inventory' | 'loans'
 
+
 export default function Dashboard() {
+  const {useGetRows, useDeleteRow, useExport} = useDatabase(); // get hooks from lib/hooks/useDatabase
+
   const [tab, setTab] = useState<Tab>('inventory')
 
   const { data: inventoryData = [] } = useGetRows("Stock")

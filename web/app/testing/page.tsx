@@ -2,13 +2,14 @@
 
 import Layout from "../components/Layout";
 import { 
-    useGetRows, 
-    useDeleteRow 
+useDatabase
 } from "@/services/lib/hooks/useDatabase";
 
 export default function Testing() {
+    const {useGetRows, useDeleteRow, useExport} = useDatabase();
     const { refetch: getAll } = useGetRows("Stock");;
     const { mutate: remove } = useDeleteRow("Stock");
+    const {mutate: exports } = useExport("Stock");
 
     return (
         <Layout>
@@ -40,6 +41,13 @@ export default function Testing() {
                                     delete row ID
                                 </button>
                                 {/* to here, and replace the function (remove(1)) with the funciton you implemented to test */}
+
+                                                                <button 
+                                    onClick={() => exports("Stock")} 
+                                    className="px-6 py-2 bg-white border border-neutral-300 rounded text-xs font-bold hover:bg-neutral-50 transition-colors hover:cursor-pointer"
+                                >
+                                    export table by name
+                                </button>
 
 
 
