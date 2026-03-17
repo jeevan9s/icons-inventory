@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useRef, useCallback, useEffect } from "react";
 import {
   LayoutDashboard,
@@ -13,6 +15,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/services/lib/hooks/useAuth";
+import { useDialog } from "@/services/lib/hooks/useDialog";
 import SignOutDialog from "./SignOutDialog";
 import SettingsDialog from "./SettingsDialog";
 import Link from "next/link";
@@ -41,11 +44,6 @@ const tableItems = [
   { icon: ShelvingUnit, label: "Inventory" },
 ];
 
-const generalItems = [
-  { icon: Settings, label: "Settings" },
-  { icon: LogOut, label: "Sign Out" },
-];
-
 const ICON_ONLY_WIDTH = 56;
 const MIN_WIDTH = 160;
 const MAX_WIDTH = 400;
@@ -67,26 +65,26 @@ export default function Sidebar({
   const iconOnly = isLocked && width <= ICON_ONLY_WIDTH + 10;
   const showLabels = !iconOnly;
 
-  const [signOutOpen, setSignOutOpen] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [addOpen, setAddOpen] = useState(false);
-  const [exportOpen, setExportOpen] = useState(false)
+  const { Dialog: SignOut, open: openSignOut } = useDialog(SignOutDialog);
+  const { Dialog: SettingsD, open: openSettings } = useDialog(SettingsDialog);
+  const { Dialog: SearchD, open: openSearch } = useDialog(SearchDialog);
+  const { Dialog: Add, open: openAdd } = useDialog(AddDialog);
+  const { Dialog: Export, open: openExport } = useDialog(ExportDialog);
 
   const generalActions: Record<string, () => void> = {
-    "Settings": () => setSettingsOpen(true),
-    "Sign Out": () => setSignOutOpen(true),
+    "Settings": openSettings,
+    "Sign Out": openSignOut,
   };
 
   const menuActions: Record<string, () => void> = {
-    "Search": () => setSearchOpen(true),
-    "Add": () => setAddOpen(true),
-    "Export": () => setExportOpen(true)
+    "Search": openSearch,
+    "Add": openAdd,
+    "Export": openExport
   };
 
   useEffect(() => {
     onWidthChange?.(DEFAULT_WIDTH);
-  }, []);
+  }, [onWidthChange]);
 
   const { user } = useAuth();
 
@@ -279,7 +277,10 @@ export default function Sidebar({
           </AnimatePresence>
 
           <nav className="flex flex-col gap-1">
-            {generalItems.map(({ icon: Icon, label }) => (
+            {[
+              { icon: Settings, label: "Settings" },
+              { icon: LogOut, label: "Sign Out" },
+            ].map(({ icon: Icon, label }) => (
               <motion.button
                 layout
                 key={label}
@@ -333,11 +334,11 @@ export default function Sidebar({
         </div>
       </motion.aside>
 
-      <SignOutDialog isOpen={signOutOpen} onClose={() => setSignOutOpen(false)} />
-      <SettingsDialog isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
-      <SearchDialog isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
-      <AddDialog isOpen={addOpen} onClose={() => setAddOpen(false)} />
-      <ExportDialog isOpen={exportOpen} onClose={() => setExportOpen(false)} />
+      <SignOut />
+      <SettingsD />
+      <SearchD />
+      <Add />
+      <Export  />
 
       {isLocked && (
         <div

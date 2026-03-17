@@ -19,10 +19,14 @@ export const loginWithMicrosoft = async () => {
 }
 
 export const logout = async () => {
-    const supabase = getBrowserClient()
-    await supabase.auth.signOut()
-    window.location.href = '/'
-}
+  const supabase = getBrowserClient();
+  const { error } = await supabase.auth.signOut();
+  if (error) {
+    console.error("logout failed:", error);
+    return;
+  }
+  window.location.href = '/auth/logout';
+};
 
 export async function populateUser(): Promise<User | null> {
     const supabase = getBrowserClient();
