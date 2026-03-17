@@ -39,7 +39,23 @@ export const useDeleteRow = (tableName: TableName) => {
 // useRowInsert - this requires Amaan's implementation, so I'd get started on useRowFiltred first since the function is already implemented. 
 
 // useRowFiltered
+export const useRowFiltered = (table: TableName, column: string, qualifier: filterQualifier) => {
+  return useMutation({
+    mutationFn: () => {
+      return getDataFiltered(table, column, qualifier)
+    },
 
+    onSuccess: (data, ) => {
+      console.log(`Filtered ${table} for ${column} ${qualifier}`);
+    },
+
+    onError: (error, ) => {
+      console.error(`Filter failed for ${column} ${qualifier}:` , error.message);
+    }
+  });
+};
+
+export type filterQualifier = "e" | "gt" | "lt" | "gte" | "lte" ;
 /*
 use Spencer's "getDataFiltered()"" function for the mutation function (mutationFn) : , it is already imported at the top - but go check it out cause it'll make implementation easier
 parameters needed: table name (same as all functions), column (string), and qualifier 
