@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import Navbar from "../../components/Navbar";
 import Link from "next/link";
 
-export default function UnauthorizedAccess() {
+export default function NotAuthorized() {
   return (
     <div className="min-h-screen flex flex-col items-center  bg-gray-100 select-none">
       <Navbar pageType="error" />

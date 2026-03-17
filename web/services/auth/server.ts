@@ -29,20 +29,59 @@ export const getCurrentUser = async (): Promise<User | null> => {
 
 // middleware logic
 export const updateSession = async (request: NextRequest) => {
-    let response = NextResponse.next({headers: request.headers})
+    let response = NextResponse.next({
+        request: {
+            headers: request.headers,
+        },
+    });
 
-    const supabase = createServerClient(supabaseURL(), supabaseAnonKey(), {
-        cookies: {
-            getAll: () => request.cookies.getAll(),
-            setAll: (cookiesToSet) =>{
-                cookiesToSet.forEach(({name, value}) => request.cookies.set(name, value))
-                response = NextResponse.next({request})
-                cookiesToSet.forEach(({name, value, options}) => response.cookies.set(name, value, options))
-            }
+    const supabase = createServerClient(
+        supabaseURL(),
+        supabaseAnonKey(),
+        {
+            cookies: {
+                getAll: () => request.cookies.getAll(),
+                setAll: (cookiesToSet) => {
+                    cookiesToSet.forEach(({ name, value }) =>
+                        request.cookies.set(name, value)
+                    );
+
+                    response = NextResponse.next({ request });
+
+                    cookiesToSet.forEach(({ name, value, options }) =>
+                        response.cookies.set(name, value, options)
+                    );
+                },
+            },
         }
-    }
-)
+    );
 
-await supabase.auth.getUser()
-return response
+    // acess and protection
+
+    const {
+        data: { user },
+    } = await supabase.auth.getUser();
+
+    const isAuthenticated = !!user;
+
+    const { pathname } = request.nextUrl;
+
+    const protectedRoutes = ["/main", "/data"];
+
+    const isProtectedRoute = protectedRoutes.some((route) =>
+        pathname.startsWith(route)
+    );
+
+    if (pathname === "/errors/not-authorized") {
+        return response;
+    }
+
+ if (isProtectedRoute && !isAuthenticated) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/errors/not-authorized";
+    return NextResponse.rewrite(url);
 }
+
+    return response;
+};
+
