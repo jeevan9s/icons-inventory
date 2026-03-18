@@ -80,6 +80,46 @@ export async function getData<table_name extends keyof Database['public']['Table
         return entries;
     }
 }
+//  Gets data entries from a specified table where their column 'searchBy' has the value of
+//  qualifier.
+export async function getDataFiltered<table_name extends keyof Database['public']['Tables'],column extends Database['public']['Tables'][table_name]['Row']> (table: table_name, filterBy: keyof column, qualifier: "e" | "gt" | "lt" | "gte" | "lte", filterTerm: column[keyof column]) {
+    if (qualifier === "e") {
+        const { data, error } = await supabase
+        .from(table)
+        .select("*")
+        .eq(filterBy as string, filterTerm as any);
+        if (error) console.error(error);
+        return data || [];
+    } else if (qualifier === "gt") {
+        const { data, error } = await supabase
+        .from(table)
+        .select("*")
+        .gt(filterBy as string, filterTerm as any);
+        if (error) console.error(error);
+        return data || [];
+    } else if (qualifier === "lt") {
+        const { data, error } = await supabase
+        .from(table)
+        .select("*")
+        .lt(filterBy as string, filterTerm as any);
+        if (error) console.error(error);
+        return data || [];
+    } else if (qualifier === "gte") {
+        const { data, error } = await supabase
+        .from(table)
+        .select("*")
+        .gte(filterBy as string, filterTerm as any);
+        if (error) console.error(error);
+        return data || [];
+    } else if (qualifier === "lte") {
+        const { data, error } = await supabase
+        .from(table)
+        .select("*")
+        .lte(filterBy as string, filterTerm as any);
+        if (error) console.error(error);
+        return data || [];
+    }
+}
 
 export async function addEntry(val: number) {
     console.log("Adding entry");
@@ -106,8 +146,8 @@ export async function deleteById<table_name extends keyof Database['public']['Ta
 
 //  Export table function takes in a name of a table in the database and exports it to the browser downloader
 //  as a table_name.csv
-export async function exportTable<table_name extends keyof Database['public']['Tables']> (table: table_name) {
-    let entries: Array<Object> = await getData(table, 'id', true, -1);
+export async function exportTable<table_name extends keyof Database['public']['Tables']> (table: table_name, data?: unknown[]) { // added optional data parameter for exporting by filters and selection
+    let entries: any[] = data ? data : await getData(table, 'id', true, -1);
     if (entries.length === 0) {
         console.log("No entries to export");
         return;
@@ -116,7 +156,7 @@ export async function exportTable<table_name extends keyof Database['public']['T
     let csvContent: string = headers.join(",") + "\n";
     entries.forEach((entry) => {
         Object.values(entry).forEach((value) => {
-            let formatted  = typeof value == "object" && value ? JSON.stringify(value) : value
+            let formatted  = typeof value == "object" && value ? JSON.stringify(value) : value // added serialization layer to properly display JSON field in "Stock" table after export
             formatted = String(formatted ?? "");
 
             csvContent += `"${formatted.replace(/"/g, '""')}",`

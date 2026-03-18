@@ -338,7 +338,14 @@ export default function Sidebar({
       <SettingsD />
       <SearchD />
       <Add />
-      <Export  />
+      <Export
+            initialTableType={"loans"}
+            fixedTableType={false}
+            hasSelectedRows={false}
+            onExport={(type, table, filters) => {
+              console.log("export triggered:", type, table, filters);
+            }}
+          />{" "}
 
       {isLocked && (
         <div

@@ -1,9 +1,17 @@
-"use client"
+"use client";
 
-import { useState, useMemo } from "react"
-import { SortingState, ColumnDef, useReactTable, getCoreRowModel, getSortedRowModel, getFilteredRowModel, flexRender} from "@tanstack/react-table"
-import { ColHeader, StatusBadge } from "../frontendTypes"
-import { MoreVertical, Search } from "lucide-react"
+import { useState, useMemo, useEffect } from "react";
+import {
+  SortingState,
+  ColumnDef,
+  useReactTable,
+  getCoreRowModel,
+  getSortedRowModel,
+  getFilteredRowModel,
+  flexRender,
+} from "@tanstack/react-table";
+import { ColHeader, StatusBadge } from "../frontendTypes";
+import { MoreVertical, Search } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -11,154 +19,342 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table'
-import { Input } from "@/components/ui/input"
-import { motion,  } from 'framer-motion'
+} from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { motion } from "framer-motion";
+import { getLoanStatus } from "@/services/lib/hooks/helpers";
+import { getDataFiltered } from "@/services/lib/database-functions/databaseHelpers";
+import { format } from "date-fns";
 
-// CHECK INVENTORYTABLE FOR INLINE COMMENTS & EXPLANATIONS, this file was copied from there and adjusted. 
-
-// representation of a Supabase row 
 export type LoanRow = {
-  id: string
-  item: string
-  signee: string
-  student_id: string
-  student_name: string
-  location: string
-  notes: string
-  time_out: string
-  time_in: string
-  status: string
+  id: number;
+  item: string;
+  signee: string;
+  student_number: string; 
+  student_name: string;
+  location: string;
+  notes: string;
+  time_out: string;
+  time_in: string;
+  status: string;
+  display_name?: string;
+  item_name?: string;
+};
+
+interface LoansTableProps {
+  data: LoanRow[];
+  onSelectionChange?: (rows: LoanRow[]) => void;
 }
 
-export default function LoansTable({ data }: { data: LoanRow[] }) {
-  const [sorting, setSorting] = useState<SortingState>([])
-  const [globalFilter, setGlobalFilter] = useState('')
+export default function LoansTable({
+  data,
+  onSelectionChange,
+}: LoansTableProps) {
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const [globalFilter, setGlobalFilter] = useState("");
+  const [rowSelection, setRowSelection] = useState({});
+  const [enrichedData, setEnrichedData] = useState<LoanRow[]>([]);
 
-  const columns = useMemo<ColumnDef<LoanRow>[]>(() => [
-    {
-      id: 'select',
-      header: () => <input type="checkbox" className="rounded accent-green-500" />,
-      cell: () => <input type="checkbox" className="rounded accent-green-500" />,
-      size: 40,
-      enableSorting: false,
-    },
-    {
-      accessorKey: 'id',
-      header: ({ column }) => <ColHeader label="Rental ID" type="text" isSorted={column.getIsSorted()} onSort={column.getToggleSortingHandler()!} />,
-      cell: ({ getValue }) => <span className="font-mono text-xs text-neutral-400">{getValue() as string}</span>,
-    },
-    {
-      accessorKey: 'item',
-      header: ({ column }) => <ColHeader label="Item Name" type="text" isSorted={column.getIsSorted()} onSort={column.getToggleSortingHandler()!} />,
-      cell: ({ getValue }) => <span className="text-neutral-800 font-medium">{getValue() as string}</span>,
-    },
-    {
-      accessorKey: 'signee',
-      header: ({ column }) => <ColHeader label="Signee" type="text" isSorted={column.getIsSorted()} onSort={column.getToggleSortingHandler()!} />,
-      cell: ({ getValue }) => <span className="text-neutral-600">{getValue() as string}</span>,
-    },
-    {
-      accessorKey: 'studentNumber',
-      header: ({ column }) => <ColHeader label="Student Number" type="text" isSorted={column.getIsSorted()} onSort={column.getToggleSortingHandler()!} />,
-      cell: ({ getValue }) => <span className="font-mono text-xs text-neutral-400">{getValue() as string}</span>,
-    },
-    {
-      accessorKey: 'studentName',
-      header: ({ column }) => <ColHeader label="Student Name" type="text" isSorted={column.getIsSorted()} onSort={column.getToggleSortingHandler()!} />,
-      cell: ({ getValue }) => <span className="text-neutral-600">{getValue() as string}</span>,
-    },
-    {
-      accessorKey: 'location',
-      header: ({ column }) => <ColHeader label="Location" type="text" isSorted={column.getIsSorted()} onSort={column.getToggleSortingHandler()!} />,
-      cell: ({ getValue }) => <span className="text-neutral-600">{getValue() as string}</span>,
-    },
-            {
-      accessorKey: 'status',
-      header: ({ column }) => <ColHeader label="Status" type="text" isSorted={column.getIsSorted()} onSort={column.getToggleSortingHandler()!} />,
-      cell: ({ getValue }) => <StatusBadge status={getValue() as string} />,
-    },
-    
-    {
-      accessorKey: 'timeOut',
-      header: ({ column }) => <ColHeader label="Time Loaned" type="timestampt" isSorted={column.getIsSorted()} onSort={column.getToggleSortingHandler()!} />,
-      cell: ({ getValue }) => <span className="font-mono text-xs text-neutral-400">{getValue() as string}</span>,
-    },
-    {
-      accessorKey: 'timeIn',
-      header: ({ column }) => <ColHeader label="Time Returned" type="timestamp" isSorted={column.getIsSorted()} onSort={column.getToggleSortingHandler()!} />,
-      cell: ({ getValue }) => <span className="font-mono text-xs text-neutral-400">{(getValue() as string) || '—'}</span>,
-    },
+  // Helper to capitalize every word (e.g., "room 302" -> "Room 302")
+  const formatCapitalized = (text: string | null | undefined) => {
+    if (!text || text === "—") return "—";
+    return text
+      .toLowerCase()
+      .split(" ")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+  };
 
-    {
-      accessorKey: 'Notes',
-      header: ({ column }) => <ColHeader label="notes" type="text" isSorted={column.getIsSorted()} onSort={column.getToggleSortingHandler()!} />,
-      cell: ({ getValue }) => <span className="text-neutral-400 text-xs">{(getValue() as string) || '—'}</span>,
-    },
+  useEffect(() => {
+    const enrich = async () => {
+      const updated = await Promise.all(
+        data.map(async (row) => {
+          const [profile, loanItems] = await Promise.all([
+            getDataFiltered("Profiles", "id", "e", row.signee),
+            getDataFiltered("Loan Items", "loan_id", "e", row.id),
+          ]);
 
-    {
-      id: 'actions',
-      header: () => null,
-      cell: () => <button className="text-neutral-400 hover:text-neutral-700 transition-colors"><MoreVertical size={14} /></button>,
-      size: 40,
-      enableSorting: false,
-    },
-  ], [])
+          const itemDetails = await Promise.all(
+            (loanItems || []).map(async (li: any) => {
+              const stock = await getDataFiltered(
+                "Stock",
+                "id",
+                "e",
+                li.item_id,
+              );
+              const rawName = stock?.[0]?.name || "Unknown";
+              return rawName.charAt(0).toUpperCase() + rawName.slice(1);
+            }),
+          );
+
+          return {
+            ...row,
+            display_name: profile?.[0]?.name || "—",
+            item_name: itemDetails.length > 0 ? itemDetails.join(", ") : "—",
+          };
+        }),
+      );
+      setEnrichedData(updated);
+    };
+
+    if (data?.length > 0) {
+      enrich();
+    } else {
+      setEnrichedData([]);
+    }
+  }, [data]);
+
+  const columns = useMemo<ColumnDef<LoanRow>[]>(
+    () => [
+      {
+        id: "select",
+        header: ({ table }) => (
+          <Checkbox
+            checked={
+              table.getIsAllPageRowsSelected() ||
+              (table.getIsSomePageRowsSelected() && "indeterminate")
+            }
+            onCheckedChange={(value) =>
+              table.toggleAllPageRowsSelected(!!value)
+            }
+            className="translate-y-[2px] border-neutral-300"
+          />
+        ),
+        cell: ({ row }) => (
+          <Checkbox
+            checked={row.getIsSelected()}
+            onCheckedChange={(value) => row.toggleSelected(!!value)}
+            className="translate-y-[2px] border-neutral-300"
+          />
+        ),
+        size: 40,
+      },
+      {
+        accessorKey: "item_name",
+        header: ({ column }) => (
+          <ColHeader
+            label="Item(s)"
+            type="text"
+            isSorted={column.getIsSorted()}
+            onSort={column.getToggleSortingHandler()!}
+          />
+        ),
+        cell: ({ getValue }) => (
+          <span className="text-neutral-800 font-medium">
+            {getValue() as string}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "student_name",
+        header: ({ column }) => (
+          <ColHeader
+            label="Student Name"
+            type="text"
+            isSorted={column.getIsSorted()}
+            onSort={column.getToggleSortingHandler()!}
+          />
+        ),
+        cell: ({ getValue }) => (
+          <span className="text-neutral-600">
+            {formatCapitalized(getValue() as string)}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "student_number",
+        header: ({ column }) => (
+          <ColHeader
+            label="Student ID"
+            type="text"
+            isSorted={column.getIsSorted()}
+            onSort={column.getToggleSortingHandler()!}
+          />
+        ),
+        cell: ({ row }) => (
+          <span className="font-mono text-xs text-neutral-400">
+            {row.original.student_number ||
+              (row.original as any).student_number ||
+              "—"}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "location",
+        header: ({ column }) => (
+          <ColHeader
+            label="Location"
+            type="text"
+            isSorted={column.getIsSorted()}
+            onSort={column.getToggleSortingHandler()!}
+          />
+        ),
+        cell: ({ getValue }) => (
+          <span className="text-neutral-600">{getValue() as string}</span>
+        ),
+      },
+      {
+        accessorKey: "status",
+        header: ({ column }) => (
+          <ColHeader
+            label="Status"
+            type="text"
+            isSorted={column.getIsSorted()}
+            onSort={column.getToggleSortingHandler()!}
+          />
+        ),
+        cell: ({ row }) => <StatusBadge status={getLoanStatus(row.original)} />,
+      },
+      {
+        accessorKey: "display_name",
+        header: ({ column }) => (
+          <ColHeader
+            label="Signee"
+            type="text"
+            isSorted={column.getIsSorted()}
+            onSort={column.getToggleSortingHandler()!}
+          />
+        ),
+        cell: ({ getValue }) => (
+          <span className="text-neutral-600">
+            {formatCapitalized(getValue() as string)}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "time_out",
+        header: ({ column }) => (
+          <ColHeader
+            label="Time Loaned"
+            type="timestamp"
+            isSorted={column.getIsSorted()}
+            onSort={column.getToggleSortingHandler()!}
+          />
+        ),
+        cell: ({ getValue }) => {
+          const date = getValue() as string;
+          return (
+            <span className="font-mono text-xs text-neutral-400">
+              {date ? format(new Date(date), "MMM d, h:mm b") : "—"}
+            </span>
+          );
+        },
+      },
+      {
+        accessorKey: "time_in",
+        header: ({ column }) => (
+          <ColHeader
+            label="Time Returned"
+            type="timestamp"
+            isSorted={column.getIsSorted()}
+            onSort={column.getToggleSortingHandler()!}
+          />
+        ),
+        cell: ({ getValue }) => {
+          const date = getValue() as string;
+          return (
+            <span className="font-mono text-xs text-neutral-400">
+              {date ? format(new Date(date), "MMM d, h:mm b") : "—"}
+            </span>
+          );
+        },
+      },
+
+      {
+        id: "actions",
+        cell: () => (
+          <button className="text-neutral-400 hover:text-neutral-700">
+            <MoreVertical size={14} />
+          </button>
+        ),
+        size: 40,
+      },
+    ],
+    [],
+  );
 
   const table = useReactTable({
-    data,
+    data: enrichedData,
     columns,
-    state: { sorting, globalFilter },
+    state: { sorting, globalFilter, rowSelection },
+    onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
     onGlobalFilterChange: setGlobalFilter,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-  })
+  });
+
+  useEffect(() => {
+    if (onSelectionChange) {
+      const selectedData = table
+        .getSelectedRowModel()
+        .rows.map((row) => row.original);
+      onSelectionChange(selectedData);
+    }
+  }, [rowSelection, table, onSelectionChange]);
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex items-center gap-2 px-3 py-2 border-b border-neutral-100">
-        <Search size={13} className="text-neutral-400 shrink-0" />
-        <Input
-          value={globalFilter}
-          onChange={e => setGlobalFilter(e.target.value)}
-          placeholder="Filter by id, item, student..."
-          className="h-7 bg-transparent border-none text-xs text-neutral-600 placeholder:text-neutral-400 focus-visible:ring-0 font-mp p-0"
-        />
+    <div className="flex flex-col h-full bg-white">
+      <div className="flex items-center justify-between px-3 py-2 border-b border-neutral-100 sticky top-0 z-10 bg-white">
+        <div className="flex items-center gap-2 flex-1">
+          <Search size={13} className="text-neutral-400 shrink-0" />
+          <Input
+            value={globalFilter}
+            onChange={(e) => setGlobalFilter(e.target.value)}
+            placeholder="Search loans..."
+            className="h-7 bg-transparent border-none text-xs focus-visible:ring-0 p-0"
+          />
+        </div>
       </div>
-      <div className="overflow-auto flex-1">
+      <div className="overflow-auto flex-1 custom-scrollbar">
         <Table>
           <TableHeader>
-            {table.getHeaderGroups().map(hg => (
-              <TableRow key={hg.id} className="border-neutral-100 hover:bg-transparent">
-                {hg.headers.map(header => (
-                  <TableHead key={header.id} className="bg-neutral-50 px-4 py-2.5 border-r border-neutral-100 last:border-r-0" style={{ width: header.getSize() }}>
-                    {flexRender(header.column.columnDef.header, header.getContext())}
+            {table.getHeaderGroups().map((hg) => (
+              <TableRow key={hg.id} className="border-neutral-100">
+                {hg.headers.map((header) => (
+                  <TableHead
+                    key={header.id}
+                    className="bg-neutral-50 px-4 py-2.5"
+                    style={{ width: header.getSize() }}
+                  >
+                    {flexRender(
+                      header.column.columnDef.header,
+                      header.getContext(),
+                    )}
                   </TableHead>
                 ))}
               </TableRow>
             ))}
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows.length ? table.getRowModel().rows.map((row, i) => (
-              <motion.tr
-                key={row.id}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: i * 0.02 }}
-                className="border-b border-neutral-50 hover:bg-neutral-50 transition-colors"
-              >
-                {row.getVisibleCells().map(cell => (
-                  <TableCell key={cell.id} className="px-4 py-2.5 text-sm border-r border-neutral-50 last:border-r-0">
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </TableCell>
-                ))}
-              </motion.tr>
-            )) : (
+            {table.getRowModel().rows.length ? (
+              table.getRowModel().rows.map((row, i) => (
+                <motion.tr
+                  key={row.id}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: i * 0.005 }}
+                  className={`border-b border-neutral-50 ${row.getIsSelected() ? "bg-neutral-50" : "hover:bg-neutral-50/50"}`}
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id} className="px-4 py-2.5 text-sm">
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext(),
+                      )}
+                    </TableCell>
+                  ))}
+                </motion.tr>
+              ))
+            ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className="text-center text-neutral-400 py-12 font-mp text-sm">
-                  No rows found
+                <TableCell
+                  colSpan={columns.length}
+                  className="text-center text-neutral-400 py-12 text-sm"
+                >
+                  No loans found.
                 </TableCell>
               </TableRow>
             )}
@@ -166,5 +362,5 @@ export default function LoansTable({ data }: { data: LoanRow[] }) {
         </Table>
       </div>
     </div>
-  )
+  );
 }
