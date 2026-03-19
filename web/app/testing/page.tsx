@@ -6,10 +6,12 @@ useDatabase
 } from "@/services/lib/hooks/useDatabase";
 
 export default function Testing() {
-    const {useGetRows, useDeleteRow, useExport} = useDatabase();
+    const {useGetRows, useDeleteRow, useExport, useRowFiltered, useRowInsert} = useDatabase();
     const { refetch: getAll } = useGetRows("Stock");;
     const { mutate: remove } = useDeleteRow("Stock");
     const {mutate: exports } = useExport("Stock");
+    const {refetch: getFiltered} = useRowFiltered("Stock", "total_stock", "e", 4);
+    const {mutate: insert} = useRowInsert<"Stock">();
 
     return (
         <Layout>
@@ -48,6 +50,32 @@ export default function Testing() {
                                 >
                                     export table by name
                                 </button>
+                                
+                                
+                                <button 
+                                    onClick={() => getFiltered()} 
+                                    className="px-6 py-2 bg-white text-black rounded text-xs font-bold hover:bg-red-700 transition-colors hover:cursor-pointer"
+                                >
+                                    use row filtered
+                                </button>
+                                
+                                <button 
+                                    onClick={() => insert({
+                                        table: "Stock" , 
+                                        data: {
+                                            id: 6,
+                                            name: "charger",
+                                            net_stock: 6,
+                                            total_stock: 9, 
+                                            item_properties: {"equipment_type" : "electronic"}
+                                        }
+                                        
+                                    })} 
+                                    className="px-6 py-2 bg-white text-black rounded text-xs font-bold hover:bg-red-700 transition-colors hover:cursor-pointer"
+                                >
+                                    insert row
+                                </button>
+                                
 
 
 

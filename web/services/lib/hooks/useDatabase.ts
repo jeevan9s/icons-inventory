@@ -7,6 +7,8 @@ import { getDataFiltered } from "../database-functions/databaseHelpers";
 import { filterQualifier } from "./types";
 import { getLoanStatus } from "./helpers";
 import { getStockStatus } from "./helpers";
+import { Database } from "../database-functions/database.types";
+import { insertEntry } from "../database-functions/databaseHelpers";
 // query -> read/fetch data
 // mutate -> update, create, and delete data
 
@@ -79,7 +81,7 @@ export const useDatabase = () => {
                 }
               }
 
-              // filter by status
+                // filter by status
               if (keepRow && status && status !== "all") {
                 const currentStatus = getStockStatus(row).toLowerCase();
                 if (currentStatus !== status.toLowerCase()) {
@@ -163,37 +165,38 @@ export const useDatabase = () => {
     });
   };
 
-  const useRowFiltered = (
-    tableName: TableName,
-    column: string,
-    qualifier: filterQualifier,
-  ) => {
+  const useRowFiltered = <T extends TableName, C extends keyof Database['public']['Tables'][T]['Row']>
+  (tableName: T, column: C, qualifier: filterQualifier, filterTerm: Database['public']['Tables'][T]['Row'][C]) => {
     return useQuery({
-      queryKey: [tableName],
-      queryFn: async () => {
-        const data = await getDataFiltered(tableName, column, qualifier); // waiting on implementation
-        console.log(`Filtered ${tableName} for ${column} ${qualifier}`);
-        if (!data) throw new Error(`Filter failed for ${column} ${qualifier}:`);
+      queryKey: [tableName, column, qualifier, filterTerm],
+          queryFn: async () => {
+        const data = await getDataFiltered(tableName, column, qualifier, filterTerm); 
+        console.log(`Filtered ${tableName}`, data);
+        if (!data) throw new Error(`Filter failed for ${tableName}`);
         return data;
       },
     });
   };
 
-  const useRowInsert = (tableName: TableName, row: string) => {
+  const useRowInsert = <T extends keyof Database['public']['Tables']>() => {
     const queryClient = useQueryClient();
     return useMutation({
-      mutationFn: () => insert(tableName, row), // waiting on implementation
+      mutationFn: async (params: {table: T, data: Database["public"]["Tables"][T]["Insert"]}
+     )  => {
+      const {table, data} = params
+      const result = await insertEntry(table, data); 
+      console.log(`Inserted into ${table}`, data);
 
-      onSuccess: (data, id) => {
-        queryClient.invalidateQueries({ queryKey: [tableName] });
-        console.log(`Inserted ${row} into ${tableName}`);
-      },
+      if (!result) {
+        throw new Error(`insert failed for ${String(table)}`)
+      }
 
-      onError: (error, id) => {
-        console.error(`insert failed for table ${tableName}`, error.message);
-      },
+      return result;
+    }
     });
   };
 
   return { useGetRows, useDeleteRow, useExport, useRowFiltered, useRowInsert };
 };
+
+
