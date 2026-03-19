@@ -1,5 +1,5 @@
 "use client"; // must be a Client Component to use browser APIs
-import { getData, deleteById, exportTable, insertEntry, updateEntry, getDataFiltered } from "../../services/lib/database-functions/databaseHelpers"
+import { getData, deleteById, exportTable, insertEntry, updateEntry, getDataFiltered, importCSV } from "../../services/lib/database-functions/databaseHelpers"
 
 
 export default function DatabaseTestingPage() {
@@ -12,6 +12,7 @@ export default function DatabaseTestingPage() {
         <button className="bg-neutral-800 hover:bg-neutral-700 text-white py-2 px-4 rounded-lg cursor-pointer" onClick={ async () => console.log(await insertEntry("Testing Table", {value: 400}))}>insertEntry </button>
         <button className="bg-neutral-800 hover:bg-neutral-700 text-white py-2 px-4 rounded-lg cursor-pointer" onClick={ async () => console.log(await updateEntry("Testing Table", 50, {value: 999}))}>updateEntry </button>
         <button className="bg-neutral-800 hover:bg-neutral-700 text-white py-2 px-4 rounded-lg cursor-pointer" onClick={ async () => console.log(await getDataFiltered("Testing Table", "value", "gte", 42))}>getDataFiltered </button>
+        <button className="bg-neutral-800 hover:bg-neutral-700 text-white py-2 px-4 rounded-lg cursor-pointer" onClick={ async () => console.log(await importCSV("Testing Table"))}>import csv</button>
     </div>
     );
 }

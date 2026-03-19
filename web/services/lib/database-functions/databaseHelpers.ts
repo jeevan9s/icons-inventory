@@ -14,20 +14,20 @@ const supabase = createClient<Database>(supabaseUrl!, supabaseKey!)
 //  Second optional parameter specifies the starting entry (inclusively indexed at zero).
 //
 //  For full functionality, ensure that database.types.ts is up to date.
-export async function getData<table_name extends keyof Database['public']['Tables'],column extends keyof Database['public']['Tables'][table_name]['Row']>(table: table_name, order: column, ascending: boolean, count?: number, begin?: number) {
+export async function getData<table_name extends keyof Database['public']['Tables'], column extends keyof Database['public']['Tables'][table_name]['Row']>(table: table_name, order: column, ascending: boolean, count?: number, begin?: number) {
     let ordString: string = order as string;
     let entries: Array<Object> = [];
     // get all entries
     if ((count === undefined || count === -1) && begin === undefined) {
-        const { count, error } = await supabase.from(table).select("", { count: 'exact'});
+        const { count, error } = await supabase.from(table).select("", { count: 'exact' });
         if (error) console.error(error);
-        if (count == null) return entries; 
-        for (let i = count; i >= 0; i-=1000) {
+        if (count == null) return entries;
+        for (let i = count; i >= 0; i -= 1000) {
             let { data, error } = await supabase
-            .from(table)
-            .select("*")
-            .order(ordString, { ascending: ascending })
-            .range(Math.max(0, i-1000), i);
+                .from(table)
+                .select("*")
+                .order(ordString, { ascending: ascending })
+                .range(Math.max(0, i - 1000), i);
             if (data == null) break;
             if (error) console.error(error);
             entries = entries.concat(data);
@@ -36,13 +36,13 @@ export async function getData<table_name extends keyof Database['public']['Table
     }
     // get count entries
     else if (begin === undefined && (count !== undefined && count !== -1)) {
-        count --;
-        for (let i = count; i >= 0; i-=1000) {
+        count--;
+        for (let i = count; i >= 0; i -= 1000) {
             let { data, error } = await supabase
-            .from(table)
-            .select("*")
-            .order(ordString, { ascending: ascending })
-            .range(Math.max(0, i-1000), i);
+                .from(table)
+                .select("*")
+                .order(ordString, { ascending: ascending })
+                .range(Math.max(0, i - 1000), i);
             if (data == null) break;
             if (error) console.error(error);
             entries = entries.concat(data);
@@ -51,13 +51,13 @@ export async function getData<table_name extends keyof Database['public']['Table
     }
     // get count entries, starting at begin
     else if (begin !== undefined && (count !== undefined && count !== -1)) {
-        count --;
-        for (let i = count+begin; i >= begin; i-=1000) {
+        count--;
+        for (let i = count + begin; i >= begin; i -= 1000) {
             let { data, error } = await supabase
-            .from(table)
-            .select("*")
-            .order(ordString, { ascending: ascending })
-            .range(Math.max(begin, i-1000), i);
+                .from(table)
+                .select("*")
+                .order(ordString, { ascending: ascending })
+                .range(Math.max(begin, i - 1000), i);
             if (data == null) break;
             if (error) console.error(error);
             entries = entries.concat(data);
@@ -66,15 +66,15 @@ export async function getData<table_name extends keyof Database['public']['Table
     }
     // get all entries starting at begin
     else {
-        const { count, error } = await supabase.from(table).select("", { count: 'exact'});
+        const { count, error } = await supabase.from(table).select("", { count: 'exact' });
         if (error) console.error(error);
-        if (count == null) return entries; 
-        for (let i = begin!; i <= count-begin!; i+=1000) {
+        if (count == null) return entries;
+        for (let i = begin!; i <= count - begin!; i += 1000) {
             let { data, error } = await supabase
-            .from(table)
-            .select("*")
-            .order(ordString, { ascending: ascending })
-            .range(i, count);
+                .from(table)
+                .select("*")
+                .order(ordString, { ascending: ascending })
+                .range(i, count);
             if (data == null) break;
             if (error) console.error(error);
             entries = entries.concat(data);
@@ -85,71 +85,62 @@ export async function getData<table_name extends keyof Database['public']['Table
 
 //  Gets data entries from a specified table where their column 'searchBy' has the value of
 //  qualifier.
-export async function getDataFiltered<table_name extends keyof Database['public']['Tables'],column extends Database['public']['Tables'][table_name]['Row']> (table: table_name, filterBy: keyof column, qualifier: "e" | "gt" | "lt" | "gte" | "lte", filterTerm: column[keyof column]) {
+export async function getDataFiltered<table_name extends keyof Database['public']['Tables'], column extends Database['public']['Tables'][table_name]['Row']>(table: table_name, filterBy: keyof column, qualifier: "e" | "gt" | "lt" | "gte" | "lte", filterTerm: column[keyof column]) {
     if (qualifier === "e") {
         const { data, error } = await supabase
-        .from(table)
-        .select("*")
-        .eq(filterBy as string, filterTerm as any);
+            .from(table)
+            .select("*")
+            .eq(filterBy as string, filterTerm as any);
         if (error) console.error(error);
         return data || [];
     } else if (qualifier === "gt") {
         const { data, error } = await supabase
-        .from(table)
-        .select("*")
-        .gt(filterBy as string, filterTerm as any);
+            .from(table)
+            .select("*")
+            .gt(filterBy as string, filterTerm as any);
         if (error) console.error(error);
         return data || [];
     } else if (qualifier === "lt") {
         const { data, error } = await supabase
-        .from(table)
-        .select("*")
-        .lt(filterBy as string, filterTerm as any);
+            .from(table)
+            .select("*")
+            .lt(filterBy as string, filterTerm as any);
         if (error) console.error(error);
         return data || [];
     } else if (qualifier === "gte") {
         const { data, error } = await supabase
-        .from(table)
-        .select("*")
-        .gte(filterBy as string, filterTerm as any);
+            .from(table)
+            .select("*")
+            .gte(filterBy as string, filterTerm as any);
         if (error) console.error(error);
         return data || [];
     } else if (qualifier === "lte") {
         const { data, error } = await supabase
-        .from(table)
-        .select("*")
-        .lte(filterBy as string, filterTerm as any);
+            .from(table)
+            .select("*")
+            .lte(filterBy as string, filterTerm as any);
         if (error) console.error(error);
         return data || [];
     }
 }
 
-export async function addEntry(val: number) {
-    console.log("Adding entry");
-    const { data, error } = await supabase
-    .from('Testing Table')
-    .insert({value: val})
-    .select()
-    if (error) console.error(error);
-    data?.forEach((row) => {
-        console.log("Row ", row);
-    });
-}
-
 //  Delete by id deletes an entry from the specified table based on it's unique id number.
 export async function deleteById<table_name extends keyof Database['public']['Tables'], identificationNumber extends Database['public']['Tables'][table_name]['Row']['id']>
- (table: table_name, id: identificationNumber) {
+    (table: table_name, id: identificationNumber) {
     const { data, error } = await supabase
-    .from(table)
-    .delete()
-    .eq('id', id as any);
+        .from(table)
+        .delete()
+        .eq('id', id as any);
     if (error) console.error(error);
     if (data) console.log(data);
 }
 
+// Note from Spencer Tapp for exportTable function
+// I will admit, I used copilot ai for this function as I was in a time crunch and have NOT DONE any js/ts 
+// file handling before.
 //  Export table function takes in a name of a table in the database and exports it to the browser downloader
 //  as a table_name.csv
-export async function exportTable<table_name extends keyof Database['public']['Tables']> (table: table_name) {
+export async function exportTable<table_name extends keyof Database['public']['Tables']>(table: table_name) {
     let entries: Array<Object> = await getData(table, 'id', true, -1);
     if (entries.length === 0) {
         console.log("No entries to export");
@@ -174,70 +165,104 @@ export async function exportTable<table_name extends keyof Database['public']['T
     document.body.removeChild(anchor);
     URL.revokeObjectURL(url);
 }
+
 export async function insertEntry<T extends keyof Database["public"]["Tables"], row extends Database["public"]["Tables"][T]["Insert"]>
-(table: T, data: row) {
-  const { data: insertedData, error } = await supabase
-    .from(table)
-    .insert(data as any)
-    .select();
+    (table: T, data: row) {
+    const { data: insertedData, error } = await supabase
+        .from(table)
+        .insert(data as any)
+        .select();
 
-  if (error) {
-    console.error(`Error inserting into ${String(table)}:`, error);
-    return null;
-  }
+    if (error) {
+        console.error(`Error inserting into ${String(table)}:`, error);
+        return null;
+    }
 
-  console.log(data);
+    console.log(data);
 
-  return insertedData;
+    return insertedData;
 }
 
 export async function updateEntry<T extends keyof Database["public"]["Tables"], row extends Database["public"]["Tables"][T]["Update"]>
-(table: T, id: Database["public"]["Tables"][T]["Row"]["id"], updatedData: row) {
-  const { data, error } = await supabase
-    .from(table)
-    .update(updatedData as any)
-    .eq("id", id as any)
-    .select();
+    (table: T, id: Database["public"]["Tables"][T]["Row"]["id"], updatedData: row) {
+    const { data, error } = await supabase
+        .from(table)
+        .update(updatedData as any)
+        .eq("id", id as any)
+        .select();
 
-  if (error) {
-    console.error(`Error updating ${String(table)} with id ${id}:`, error);
-    return null;
-  }
+    if (error) {
+        console.error(`Error updating ${String(table)} with id ${id}:`, error);
+        return null;
+    }
 
-  return data;
+    return data;
 }
 
-export async function importCSV<table_name extends keyof Database["public"]["Tables"]>(table: table_name,file: File) {
-  const text = await file.text();
+// ==================CSV IMPORT FUNCTIONALITY============================
+// Note from Spencer Tapp for openCSVFilePicker and importCSV function
+// I will admit, I used copilot ai for this function as I was in a time crunch and have NOT DONE any js/ts 
+// file handling before.
 
-  const parsed = Papa.parse<Database["public"]["Tables"][table_name]["Insert"]>(text, {
-    header: true,
-    skipEmptyLines: true,
-    dynamicTyping: true
-  });
+async function openCsvFilePicker(): Promise<File | null> {
+    return new Promise((resolve) => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.csv';
+        input.style.display = 'none';
 
-  if (parsed.errors.length > 0) {
-    console.error("CSV parse errors:", parsed.errors);
-    return null;
-  }
+        input.addEventListener('change', () => {
+            const file = input.files?.[0] ?? null;
+            resolve(file);
+            input.remove();
+        });
 
-  const rows = parsed.data as Database["public"]["Tables"][table_name]["Insert"][];
+        document.body.appendChild(input);
+        input.click();
+    });
+}
 
-  if (rows.length === 0) {
-    console.log("CSV file has no data."); 
-    return null;
-  }
+export async function importCSV<table_name extends keyof Database["public"]["Tables"]>(table: table_name, file?: File) {
+    const csvFile = file ?? (await openCsvFilePicker());
+    if (!csvFile) return null; // ensure a csv was picked up
+    const text = await csvFile.text();
 
-  const { data, error } = await supabase
-    .from(table)
-    .insert(rows as any)
-    .select();
+    // must parse the csv into typescript objects
+    const parsed = Papa.parse<Database["public"]["Tables"][table_name]["Insert"]>(text, {
+        header: true,
+        skipEmptyLines: true,
+        dynamicTyping: true
+    });
 
-  if (error) {
-    console.error("Error importing CSV:", error);
-    return null;
-  }
+    if (parsed.errors.length > 0) { // if any errors in parsing DO NOT CONTINUE
+        console.error("CSV parse errors:", parsed.errors);
+        return null;
+    }
 
-  console.log(`Successfully imported CSV into ${String(table)}`, data);
-  return data;
+    const rows = parsed.data as Database["public"]["Tables"][table_name]["Insert"][];
+
+    if (rows.length === 0) { // stop if empty file imported, do not want to delete current table
+        console.log("CSV file has no data.");
+        return null;
+    }
+
+    // insert parsed rows, exclude id as supabase will generate it automatically
+    const rowWithoutID = rows.map((row) => {
+        const { id, ...rest } = row as any;
+        return rest as any;
+    });
+
+
+    const { data, error } = await supabase
+        .from(table)
+        .insert(rowWithoutID)
+        .select();
+
+    if (error) {
+        console.error("Error importing CSV:", error);
+        return null;
+    }
+
+    console.log(`Successfully imported CSV into ${String(table)}`, data);
+    return data;
 }
