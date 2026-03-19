@@ -1,4 +1,6 @@
 "use client"; // must be a Client Component to use browser APIs
+
+import Papa from "papaparse";
 import { Database } from './database.types';
 import { createClient } from '@supabase/supabase-js'
 
@@ -80,6 +82,7 @@ export async function getData<table_name extends keyof Database['public']['Table
         return entries;
     }
 }
+
 //  Gets data entries from a specified table where their column 'searchBy' has the value of
 //  qualifier.
 export async function getDataFiltered<table_name extends keyof Database['public']['Tables'],column extends Database['public']['Tables'][table_name]['Row']> (table: table_name, filterBy: keyof column, qualifier: "e" | "gt" | "lt" | "gte" | "lte", filterTerm: column[keyof column]) {
@@ -146,8 +149,8 @@ export async function deleteById<table_name extends keyof Database['public']['Ta
 
 //  Export table function takes in a name of a table in the database and exports it to the browser downloader
 //  as a table_name.csv
-export async function exportTable<table_name extends keyof Database['public']['Tables']> (table: table_name, data?: unknown[]) { // added optional data parameter for exporting by filters and selection
-    let entries: any[] = data ? data : await getData(table, 'id', true, -1);
+export async function exportTable<table_name extends keyof Database['public']['Tables']> (table: table_name) {
+    let entries: Array<Object> = await getData(table, 'id', true, -1);
     if (entries.length === 0) {
         console.log("No entries to export");
         return;
@@ -156,11 +159,7 @@ export async function exportTable<table_name extends keyof Database['public']['T
     let csvContent: string = headers.join(",") + "\n";
     entries.forEach((entry) => {
         Object.values(entry).forEach((value) => {
-            let formatted  = typeof value == "object" && value ? JSON.stringify(value) : value // added serialization layer to properly display JSON field in "Stock" table after export
-            formatted = String(formatted ?? "");
-
-            csvContent += `"${formatted.replace(/"/g, '""')}",`
- 
+            csvContent += `"${value}",`;
         })
         csvContent += "\n";
     });
@@ -175,7 +174,6 @@ export async function exportTable<table_name extends keyof Database['public']['T
     document.body.removeChild(anchor);
     URL.revokeObjectURL(url);
 }
-
 export async function insertEntry<T extends keyof Database["public"]["Tables"], row extends Database["public"]["Tables"][T]["Insert"]>
 (table: T, data: row) {
   const { data: insertedData, error } = await supabase
@@ -193,3 +191,53 @@ export async function insertEntry<T extends keyof Database["public"]["Tables"], 
   return insertedData;
 }
 
+export async function updateEntry<T extends keyof Database["public"]["Tables"], row extends Database["public"]["Tables"][T]["Update"]>
+(table: T, id: Database["public"]["Tables"][T]["Row"]["id"], updatedData: row) {
+  const { data, error } = await supabase
+    .from(table)
+    .update(updatedData as any)
+    .eq("id", id as any)
+    .select();
+
+  if (error) {
+    console.error(`Error updating ${String(table)} with id ${id}:`, error);
+    return null;
+  }
+
+  return data;
+}
+
+export async function importCSV<table_name extends keyof Database["public"]["Tables"]>(table: table_name,file: File) {
+  const text = await file.text();
+
+  const parsed = Papa.parse<Database["public"]["Tables"][table_name]["Insert"]>(text, {
+    header: true,
+    skipEmptyLines: true,
+    dynamicTyping: true
+  });
+
+  if (parsed.errors.length > 0) {
+    console.error("CSV parse errors:", parsed.errors);
+    return null;
+  }
+
+  const rows = parsed.data as Database["public"]["Tables"][table_name]["Insert"][];
+
+  if (rows.length === 0) {
+    console.log("CSV file has no data."); 
+    return null;
+  }
+
+  const { data, error } = await supabase
+    .from(table)
+    .insert(rows as any)
+    .select();
+
+  if (error) {
+    console.error("Error importing CSV:", error);
+    return null;
+  }
+
+  console.log(`Successfully imported CSV into ${String(table)}`, data);
+  return data;
+}
