@@ -276,6 +276,7 @@ export default function Dashboard() {
         </div>
 
         <ExportDialog
+          key={tab}
           isOpen={isExportOpen}
           onClose={() => setExportOpen(false)}
           initialTableType={tab === "inventory" ? "Stock" : "Loans"}

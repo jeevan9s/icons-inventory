@@ -15,13 +15,13 @@ import { insertEntry } from "../database-functions/databaseHelpers";
 export const useDatabase = () => {
   const queryClient = useQueryClient();
 
-  const useGetRows = <T = unknown>(tableName: TableName) => {
-    return useQuery<T[]>({
+  const useGetRows = (tableName: TableName) => {
+    return useQuery({
       queryKey: [tableName],
       queryFn: async () => {
         const data = await getData(tableName, "id", true);
         console.log(`received: ${tableName} (${data?.length || 0} rows)`);
-        return (data as T[]) || [];
+        return data || [];
       },
     });
   };
@@ -44,109 +44,73 @@ export const useDatabase = () => {
 
     return useMutation({
       mutationFn: async (payload: any) => {
+        // 1. Fetch the primary data
         const allData = (await getData(tableName, "id", true)) as any[];
         if (!allData || allData.length === 0) return [];
+
+        // 2. Pre-fetch reference data to avoid N+1 query performance issues
+        let profileMap: Record<string, any> = {};
+        let stockMap: Record<string, any> = {};
+
+        if (tableName === "Loans") {
+          const [profiles, stock] = await Promise.all([
+            getData("Profiles", "id", true),
+            getData("Stock", "id", true)
+          ]);
+          
+          profileMap = (profiles || []).reduce((acc: any, p: any) => ({ ...acc, [p.id]: p }), {});
+          stockMap = (stock || []).reduce((acc: any, s: any) => ({ ...acc, [s.id]: s }), {});
+        }
 
         const enrichedFilteredData = [];
 
         for (const row of allData) {
           let keepRow = true;
 
+          // --- Filtering Logic ---
           if (payload.mode === "selected" && payload.ids) {
-            keepRow = payload.ids.some(
-              (id: any) => String(id) === String(row.id),
-            );
-          } else if (payload.mode === "filtered" && payload.filters) {
-            const {
-              signeeName,
-              startDateTime,
-              endDateTime,
-              status,
-              equipment_type,
-              threshold,
-            } = payload.filters;
+            keepRow = payload.ids.some((id: any) => String(id) === String(row.id));
+          } 
+          else if (payload.mode === "filtered" && payload.filters) {
+            const f = payload.filters;
 
             if (tableName === "Stock") {
-              const { threshold, equipment_type, status } = payload.filters;
-
-              // filter by threshold
-              if (threshold && Number(row.net_stock) > Number(threshold)) {
-                keepRow = false;
+              if (f.threshold && Number(row.net_stock) > Number(f.threshold)) keepRow = false;
+              if (keepRow && f.equipment_type && f.equipment_type !== "all") {
+                if (row.item_properties?.equipment_type !== f.equipment_type) keepRow = false;
               }
-
-              // filter by equipment type
-              if (keepRow && equipment_type && equipment_type !== "all") {
-                if (row.item_properties?.equipment_type !== equipment_type) {
-                  keepRow = false;
-                }
+              if (keepRow && f.status && f.status !== "all") {
+                if (getStockStatus(row).toLowerCase() !== f.status.toLowerCase()) keepRow = false;
               }
-
-                // filter by status
-              if (keepRow && status && status !== "all") {
-                const currentStatus = getStockStatus(row).toLowerCase();
-                if (currentStatus !== status.toLowerCase()) {
-                  keepRow = false;
-                }
+            } 
+            else if (tableName === "Loans") {
+              if (f.signeeName) {
+                const actualName = profileMap[row.signee]?.name || row.student_name || "";
+                if (!actualName.toLowerCase().includes(f.signeeName.toLowerCase())) keepRow = false;
               }
-            } else if (tableName === "Loans") {
-              // filter by signee name - using getDataFiltered for enrichment (might make this a helper function later on)
-              if (signeeName) {
-                const profile = await getDataFiltered(
-                  "Profiles",
-                  "id",
-                  "e",
-                  row.signee,
-                );
-                const actualName = profile?.[0]?.name || row.student_name || "";
-                if (
-                  !actualName.toLowerCase().includes(signeeName.toLowerCase())
-                )
-                  keepRow = false;
+              if (keepRow && f.status && f.status !== "all") {
+                if (getLoanStatus(row).toLowerCase() !== f.status.toLowerCase()) keepRow = false;
               }
-
-              // filter by status
-              if (keepRow && status && status !== "all") {
-                const currentStatus = getLoanStatus(row).toLowerCase();
-                if (currentStatus !== status.toLowerCase()) keepRow = false;
-              }
-
-              // filter by date
-              const rowTimeOut = row.time_out ? new Date(row.time_out) : null;
-              if (keepRow && startDateTime && rowTimeOut) {
-                if (rowTimeOut < new Date(startDateTime)) keepRow = false;
-              }
-              if (keepRow && endDateTime && rowTimeOut) {
-                if (rowTimeOut > new Date(endDateTime)) keepRow = false;
-              }
+              const rowTime = row.time_out ? new Date(row.time_out) : null;
+              if (keepRow && f.startDateTime && rowTime && rowTime < new Date(f.startDateTime)) keepRow = false;
+              if (keepRow && f.endDateTime && rowTime && rowTime > new Date(f.endDateTime)) keepRow = false;
             }
           }
 
+          // --- Enrichment Logic ---
           if (keepRow) {
             if (tableName === "Loans") {
-              // enrichment
-              const [profile, loanItems] = await Promise.all([
-                getDataFiltered("Profiles", "id", "e", row.signee),
-                getDataFiltered("Loan Items", "loan_id", "e", row.id),
-              ]);
-
-              const itemDetails = await Promise.all(
-                (loanItems || []).map(async (li: any) => {
-                  const stock = await getDataFiltered(
-                    "Stock",
-                    "id",
-                    "e",
-                    li.item_id,
-                  );
-                  const name = stock?.[0]?.name || "Unknown";
-                  return name.charAt(0).toUpperCase() + name.slice(1);
-                }),
-              );
+              // Get the names of items in this specific loan
+              const loanItems = await getDataFiltered("Loan Items", "loan_id", "e", row.id);
+              const itemNames = (loanItems || []).map((li: any) => {
+                const name = stockMap[li.item_id]?.name || "Unknown";
+                return name.charAt(0).toUpperCase() + name.slice(1);
+              });
 
               enrichedFilteredData.push({
                 ...row,
-                display_name: profile?.[0]?.name || row.student_name || "—",
-                item_name:
-                  itemDetails.length > 0 ? itemDetails.join(", ") : "—",
+                display_name: profileMap[row.signee]?.name || row.student_name || "—",
+                item_name: itemNames.length > 0 ? itemNames.join(", ") : "—",
                 status: getLoanStatus(row),
               });
             } else {
@@ -157,10 +121,12 @@ export const useDatabase = () => {
 
         if (enrichedFilteredData.length === 0) return [];
 
-        return exportTable(tableName, enrichedFilteredData);
+        // Use casting here to ensure the data is passed correctly to your helper
+        return (exportTable as any)(tableName, enrichedFilteredData);
       },
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: [tableName] });
+        // No need to invalidate unless the export actually changes DB data
+        console.log("Export successful");
       },
     });
   };
@@ -179,7 +145,6 @@ export const useDatabase = () => {
   };
 
   const useRowInsert = <T extends keyof Database['public']['Tables']>() => {
-    const queryClient = useQueryClient();
     return useMutation({
       mutationFn: async (params: {table: T, data: Database["public"]["Tables"][T]["Insert"]}
      )  => {
@@ -198,5 +163,4 @@ export const useDatabase = () => {
 
   return { useGetRows, useDeleteRow, useExport, useRowFiltered, useRowInsert };
 };
-
 

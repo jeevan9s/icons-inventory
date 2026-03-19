@@ -43,4 +43,19 @@ export type ActivityItem = {
   action: 'logged' | 'completed' | 'added' | 'updated';
 };
 
+export type ExportFilters = {
+  signeeName?: string;
+  startDateTime?: string;
+  endDateTime?: string;
+  status?: string;
+  equipment_type?: string;
+  threshold?: number;
+};
+
+export type ExportPayload = {
+  mode: "all" | "selected" | "filtered";
+  ids?: (string | number)[];
+  filters?: ExportFilters;
+};
+
 export type equipmentType = "stationary" | "electronic" | "misc";
