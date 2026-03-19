@@ -122,30 +122,33 @@ export async function exportTable<table_name extends keyof Database['public']['T
     document.body.removeChild(anchor);
     URL.revokeObjectURL(url);
 }
-
-export async function insertLoanItem(data: Database["public"]["Tables"]["Loan Items"]["Insert"]) {
+export async function insertEntry<T extends keyof Database["public"]["Tables"], row extends Database["public"]["Tables"][T]["Insert"]>
+(table: T, data: row) {
   const { data: insertedData, error } = await supabase
-    .from("Loan Items")
-    .insert(data)
+    .from(table)
+    .insert(data as any)
     .select();
 
   if (error) {
-    console.error("Error inserting loan item:", error);
+    console.error(`Error inserting into ${String(table)}:`, error);
     return null;
   }
+
+  console.log(data);
 
   return insertedData;
 }
 
-export async function updateLoanItem(id: number, updatedData: Database["public"]["Tables"]["Loan Items"]["Update"]) {
+export async function updateEntry<T extends keyof Database["public"]["Tables"], row extends Database["public"]["Tables"][T]["Update"]>
+(table: T, id: Database["public"]["Tables"][T]["Row"]["id"], updatedData: row) {
   const { data, error } = await supabase
-    .from("Loan Items")
-    .update(updatedData)
-    .eq("id", id)
+    .from(table)
+    .update(updatedData as any)
+    .eq("id", id as any)
     .select();
 
   if (error) {
-    console.error("Error updating loan item:", error);
+    console.error(`Error updating ${String(table)} with id ${id}:`, error);
     return null;
   }
 
