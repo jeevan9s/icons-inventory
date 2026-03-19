@@ -1,5 +1,5 @@
 "use client"; // must be a Client Component to use browser APIs
-import { getData, deleteById, exportTable, insertEntry } from "../../services/lib/database-functions/databaseHelpers"
+import { getData, deleteById, exportTable, insertEntry, updateEntry } from "../../services/lib/database-functions/databaseHelpers"
 
 
 export default function DatabaseTestingPage() {
@@ -11,7 +11,8 @@ export default function DatabaseTestingPage() {
         <button className="bg-neutral-800 hover:bg-neutral-700 text-white py-2 px-4 rounded-lg cursor-pointer" onClick={ () => deleteById("Testing Table", 55)}>Delete entry</button>
         <button className="bg-neutral-800 hover:bg-neutral-700 text-white py-2 px-4 rounded-lg cursor-pointer" onClick={ () => exportTable("Testing Table")}>Export Table</button>
         {/* <button className="bg-neutral-800 hover:bg-neutral-700 text-white py-2 px-4 rounded-lg cursor-pointer" onClick={ async () => console.log(await getDataFiltered("Testing Table", "value", "gte", 42))}>getDataFiltered </button> */}
-        <button className="bg-neutral-800 hover:bg-neutral-700 text-white py-2 px-4 rounded-lg cursor-pointer" onClick={ async () => console.log(await insertEntry("Testing Table", {value: 400}))}>getDataFiltered </button>
+        <button className="bg-neutral-800 hover:bg-neutral-700 text-white py-2 px-4 rounded-lg cursor-pointer" onClick={ async () => console.log(await insertEntry("Testing Table", {value: 400}))}>insertEntry </button>
+        <button className="bg-neutral-800 hover:bg-neutral-700 text-white py-2 px-4 rounded-lg cursor-pointer" onClick={ async () => console.log(await updateEntry("Testing Table", 50, {value: 999}))}>updateEntry </button>
     </div>
     );
 }
