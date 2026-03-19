@@ -24,19 +24,7 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { motion } from "framer-motion";
 import { getStockStatus } from "@/services/lib/hooks/helpers";
-
-export type InventoryRow = {
-  id: number;
-  name: string;
-  total_stock: number;
-  net_stock: number;
-  item_properties: {
-    equipment_type?: equipmentType;
-    [key: string]: unknown;
-  } | null;
-};
-
-export type equipmentType = "stationary" | "electronic" | "misc";
+import { InventoryRow } from "@/services/lib/types";
 
 interface InventoryTableProps {
   data: InventoryRow[];

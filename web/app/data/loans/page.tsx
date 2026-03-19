@@ -8,12 +8,13 @@ import { useDialog } from "@/services/lib/hooks/useDialog";
 import AddDialog from "@/app/components/AddDialog";
 import ExportDialog from "@/app/components/ExportDialog";
 import LoansTable from "@/app/components/LoansTable";
+import { InventoryRow, LoanRow } from "@/services/lib/types";
 
 export default function LoanPage() {
   const { useGetRows } = useDatabase();
   const { data: loanData = [] } = useGetRows("Loans");
   
-  const [selectedRows, setSelectedRows] = useState<any[]>([]);
+  const [selectedRows, setSelectedRows] = useState<(InventoryRow | LoanRow)[]>([]);
   const [isExportOpen, setExportOpen] = useState(false);
 
   const { Dialog: Add, open: AddOpen } = useDialog(AddDialog);
@@ -45,7 +46,7 @@ export default function LoanPage() {
 
         <div className="flex-1 border border-neutral-100 rounded-2xl bg-white flex flex-col overflow-hidden shadow-sm">
           <LoansTable 
-            data={loanData} 
+            data={loanData as LoanRow[]} 
             onSelectionChange={setSelectedRows} 
           />
         </div>

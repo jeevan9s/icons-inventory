@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   PlusCircle,
@@ -33,15 +34,15 @@ type sbProps = {
 };
 
 const menuItems = [
-  { icon: LayoutDashboard, label: "Dashboard" },
+  { icon: LayoutDashboard, label: "Dashboard", href: "/main/dashboard" },
   { icon: PlusCircle, label: "Add" },
   { icon: Search, label: "Search" },
   { icon: Download, label: "Export" },
 ];
 
 const tableItems = [
-  { icon: BookCheck, label: "Loans" },
-  { icon: ShelvingUnit, label: "Inventory" },
+  { icon: BookCheck, label: "Loans", href: "/data/loans" },
+  { icon: ShelvingUnit, label: "Inventory", href: "/data/inventory" },
 ];
 
 const ICON_ONLY_WIDTH = 56;
@@ -58,7 +59,7 @@ export default function Sidebar({
   disableHoverZones,
   onWidthChange,
 }: sbProps) {
-  const [active, setActive] = useState("Dashboard");
+  const pathname = usePathname();
   const [width, setWidth] = useState(DEFAULT_WIDTH);
   const isResizing = useRef(false);
   const [, forceUpdate] = useState(0);
@@ -117,18 +118,55 @@ export default function Sidebar({
     [onWidthChange],
   );
 
-  const navItemClass = (label: string) =>
-    `flex items-center rounded-lg font-mp transition-colors text-sm md:text-base hover:cursor-pointer w-full
+  const navItemClass = (itemHref?: string) => {
+    const isActive = itemHref ? pathname === itemHref : false;
+    return `flex items-center rounded-lg font-mp transition-colors text-sm md:text-base hover:cursor-pointer w-full
     ${iconOnly ? "justify-center py-2.5" : "gap-3 px-3 py-2.5"}
-    ${active === label ? "bg-[#d4e6c3] text-neutral-800" : "text-neutral-600 hover:bg-[#d4e6c3]/50"}`;
+    ${isActive ? "bg-[#d4e6c3] text-neutral-800" : "text-neutral-600 hover:bg-[#d4e6c3]/50"}`;
+  };
+
+  const renderNavButton = (icon: any, label: string, href?: string, action?: () => void) => {
+    const Icon = icon;
+    const content = (
+      <motion.button
+        layout
+        onClick={action}
+        className={navItemClass(href)}
+      >
+        <Icon size={18} className="md:w-5 md:h-5 shrink-0" />
+        <AnimatePresence mode="wait">
+          {showLabels && (
+            <motion.span
+              key="label"
+              initial={{ opacity: 0, x: -4 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -4 }}
+              transition={{ duration: 0.2, ease: "easeInOut" }}
+              className="overflow-hidden"
+            >
+              {label}
+            </motion.span>
+          )}
+        </AnimatePresence>
+      </motion.button>
+    );
+
+    return href ? (
+      <Link href={href} key={label} className="w-full">
+        {content}
+      </Link>
+    ) : (
+      <div key={label} className="w-full">
+        {content}
+      </div>
+    );
+  };
 
   return (
     <>
       <motion.aside
         onMouseEnter={() => !disableHoverZones && setIsHovered(true)}
-        onMouseLeave={() =>
-          !disableHoverZones && !isLocked && setIsHovered(false)
-        }
+        onMouseLeave={() => !disableHoverZones && !isLocked && setIsHovered(false)}
         className={`fixed z-[60] flex flex-col left-0 bottom-0 rounded-tr-xl ${isLocked ? "border-r border-neutral-200" : ""}`}
         style={{
           top: NAVBAR_HEIGHT,
@@ -159,7 +197,6 @@ export default function Sidebar({
             {showLabels && (
               <motion.p
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}
                 className="font-mp text-xs md:text-sm text-neutral-400 uppercase tracking-widest mb-2 px-1"
               >
                 Menu
@@ -168,66 +205,13 @@ export default function Sidebar({
           </AnimatePresence>
 
           <nav className="flex flex-col gap-1 mb-6">
-            {menuItems.map(({ icon: Icon, label }) => {
-              if (label === "Dashboard") {
-                return (
-                  <Link href="/main/dashboard" key={label}>
-                    <motion.button
-                      layout
-                      onClick={() => setActive(label)}
-                      className={navItemClass(label)}
-                    >
-                      <Icon size={18} className="md:w-5 md:h-5 shrink-0" />
-                      <AnimatePresence mode="wait" key={label}>
-                        {showLabels && (
-                          <motion.span
-                            key="label"
-                            initial={{ opacity: 0, x: -4 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -4 }}
-                            transition={{ duration: 0.2, ease: "easeInOut" }}
-                            className="overflow-hidden"
-                          >
-                            {label}
-                          </motion.span>
-                        )}
-                      </AnimatePresence>
-                    </motion.button>
-                  </Link>
-                );
-              }
-
-              return (
-                <motion.button
-                  layout
-                  key={label}
-                  onClick={() => {
-                    setActive(label);
-                    menuActions[label]?.();
-                  }}
-                  className={navItemClass(label)}
-                >
-                  <Icon size={18} className="md:w-5 md:h-5 shrink-0" />
-                  <AnimatePresence mode="wait" key={label}>
-                    {showLabels && (
-                      <motion.span
-                        key="label"
-                        initial={{ opacity: 0, x: -4 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -4 }}
-                        transition={{ duration: 0.2, ease: "easeInOut" }}
-                        className="overflow-hidden"
-                      >
-                        {label}
-                      </motion.span>
-                    )}
-                  </AnimatePresence>
-                </motion.button>
-              );
-            })}
+            {menuItems.map((item) => renderNavButton(item.icon, item.label, item.href, menuActions[item.label]))}
           </nav>
 
           <AnimatePresence>
             {showLabels && (
               <motion.p
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}
                 className="font-mp text-xs md:text-sm text-neutral-400 uppercase tracking-widest mb-2 px-1"
               >
                 Data
@@ -236,39 +220,13 @@ export default function Sidebar({
           </AnimatePresence>
 
           <nav className="flex flex-col gap-1 mb-5">
-            {tableItems.map(({ icon: Icon, label }) => {
-              const href = label === "Loans" ? "/data/loans" : "/data/inventory";
-              return (
-                <Link href={href} key={label}>
-                  <motion.button
-                    layout
-                    onClick={() => setActive(label)}
-                    className={navItemClass(label)}
-                  >
-                    <Icon size={18} className="md:w-5 md:h-5 shrink-0" />
-                    <AnimatePresence mode="wait" key={label}>
-                      {showLabels && (
-                        <motion.span
-                          key="label"
-                          initial={{ opacity: 0, x: -4 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -4 }}
-                          transition={{ duration: 0.2, ease: "easeInOut" }}
-                          className="overflow-hidden"
-                        >
-                          {label}
-                        </motion.span>
-                      )}
-                    </AnimatePresence>
-                  </motion.button>
-                </Link>
-              );
-            })}
+            {tableItems.map((item) => renderNavButton(item.icon, item.label, item.href))}
           </nav>
 
           <AnimatePresence>
             {showLabels && (
               <motion.p
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}
                 className="font-mp text-xs md:text-sm text-neutral-400 uppercase tracking-widest mb-2 px-1"
               >
                 General
@@ -280,31 +238,7 @@ export default function Sidebar({
             {[
               { icon: Settings, label: "Settings" },
               { icon: LogOut, label: "Sign Out" },
-            ].map(({ icon: Icon, label }) => (
-              <motion.button
-                layout
-                key={label}
-                onClick={() => {
-                  setActive(label);
-                  generalActions[label]?.();
-                }}
-                className={navItemClass(label)}
-              >
-                <Icon size={18} className="md:w-5 md:h-5 shrink-0" />
-                <AnimatePresence mode="wait" key={label}>
-                  {showLabels && (
-                    <motion.span
-                      key="label"
-                      initial={{ opacity: 0, x: -4 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -4 }}
-                      transition={{ duration: 0.2, ease: "easeInOut" }}
-                      className="overflow-hidden"
-                    >
-                      {label}
-                    </motion.span>
-                  )}
-                </AnimatePresence>
-              </motion.button>
-            ))}
+            ].map((item) => renderNavButton(item.icon, item.label, undefined, generalActions[item.label]))}
           </nav>
 
           <div className="mt-auto pt-4 border-t border-neutral-100">
@@ -312,7 +246,6 @@ export default function Sidebar({
               {showLabels ? (
                 <motion.div
                   initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                  transition={{ duration: 0.2 }}
                   className="px-3 py-2 rounded-lg hover:bg-neutral-100 transition-colors cursor-pointer"
                 >
                   <p className="font-mp text-sm font-medium text-neutral-800 truncate">{user?.name ?? "—"}</p>
@@ -322,7 +255,6 @@ export default function Sidebar({
               ) : (
                 <motion.div
                   initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                  transition={{ duration: 0.2 }}
                   className="flex justify-center py-2"
                 >
                   <div className="w-7 h-7 rounded-full bg-neutral-200 flex items-center justify-center" />
@@ -330,7 +262,6 @@ export default function Sidebar({
               )}
             </AnimatePresence>
           </div>
-
         </div>
       </motion.aside>
 
@@ -339,13 +270,13 @@ export default function Sidebar({
       <SearchD />
       <Add />
       <Export
-            initialTableType={"loans"}
-            fixedTableType={false}
-            hasSelectedRows={false}
-            onExport={(type, table, filters) => {
-              console.log("export triggered:", type, table, filters);
-            }}
-          />{" "}
+        initialTableType={"loans"}
+        fixedTableType={false}
+        hasSelectedRows={false}
+        onExport={(type, table, filters) => {
+          console.log("export triggered:", type, table, filters);
+        }}
+      />
 
       {isLocked && (
         <div

@@ -4,17 +4,18 @@ import { useState } from "react";
 import Layout from "@/app/components/Layout";
 import InventoryTable from "@/app/components/InventoryTable";
 import { useDatabase } from "@/services/lib/hooks/useDatabase";
-import { Plus, Download, Package, Search, Filter } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { Plus, Download } from "lucide-react";
 import { useDialog } from "@/services/lib/hooks/useDialog";
 import AddDialog from "@/app/components/AddDialog";
 import ExportDialog from "@/app/components/ExportDialog";
+import { InventoryRow, LoanRow } from "@/services/lib/types";
 
 export default function InventoryPage() {
   const { useGetRows } = useDatabase();
   const { data: inventoryData = [] } = useGetRows("Stock");
   
-  const [selectedRows, setSelectedRows] = useState<any[]>([]);
+  
+  const [selectedRows, setSelectedRows] = useState<(LoanRow | InventoryRow)[]>([]);
   const [isExportOpen, setExportOpen] = useState(false);
 
   const { Dialog: Add, open: AddOpen } = useDialog(AddDialog);
@@ -46,7 +47,7 @@ export default function InventoryPage() {
 
         <div className="flex-1 border border-neutral-100 rounded-2xl bg-white flex flex-col overflow-hidden shadow-sm">
           <InventoryTable 
-            data={inventoryData} 
+            data={inventoryData as InventoryRow[]} 
             onSelectionChange={setSelectedRows} 
           />
         </div>

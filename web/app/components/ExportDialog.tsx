@@ -27,9 +27,10 @@ import {
   Calendar as CalendarIcon,
   X
 } from "lucide-react";
-import { format, setHours, setMinutes, isAfter } from "date-fns";
+import { format,  isAfter } from "date-fns";
 import { useDatabase } from "@/services/lib/hooks/useDatabase";
 import { TableName } from "@/services/lib/hooks/types";
+import { createDateTime } from "@/services/lib/helpers";
 
 type ExportOptions = "all" | "selected" | "filtered";
 type TableType = "Stock" | "Loans";
@@ -73,58 +74,33 @@ export default function ExportDialog({
   const { useExport } = useDatabase(); 
   const { mutate: exports, isPending } = useExport(tableType as TableName);
 
-  const convertTo24Hour = (hour: string, period: string) => {
-    let h = parseInt(hour);
-    if (period === "PM" && h < 12) h += 12;
-    if (period === "AM" && h === 12) h = 0;
-    return h;
-  };
 
-  const handleExport = () => {
-    const sHour = convertTo24Hour(filters.startHour, filters.startPeriod);
-    const startDateTime = setMinutes(setHours(filters.startDate, sHour), parseInt(filters.startMinute));
 
-    let endDateTime = null;
-    if (useEndDate) {
-      const eHour = convertTo24Hour(filters.endHour, filters.endPeriod);
-      endDateTime = setMinutes(setHours(filters.endDate, eHour), parseInt(filters.endMinute));
+const handleExport = () => {
+  const startDateTime = createDateTime(filters.startDate, filters.startHour, filters.startMinute, filters.startPeriod);
+  
+  let endDateTime = null;
+  if (useEndDate) {
+    endDateTime = createDateTime(filters.endDate, filters.endHour, filters.endMinute, filters.endPeriod);
 
-      if (exportType === "filtered" && isAfter(startDateTime, endDateTime)) {
-        toast.error("Invalid Range", { description: "Start time cannot be after end time." });
-        return;
-      }
-    }
-
-    if (exportType === "selected" && selectedRows.length === 0) {
-      toast.error("No selection", { description: "Please select rows in the table first." });
+    if (exportType === "filtered" && isAfter(startDateTime, endDateTime)) {
+      toast.error("Invalid Range", { description: "Start time cannot be after end time." });
       return;
     }
+  }
 
-    exports({
-      mode: exportType,
-      ids: exportType === "selected" ? selectedRows.map(row => row.id) : undefined,
-      filters: {
-        signeeName: filters.signeeName,
-        status: filters.status,
-        equipment_type: filters.equipment_type,
-        threshold: filters.threshold,
-        startDateTime: startDateTime.toISOString(),
-        endDateTime: endDateTime ? endDateTime.toISOString() : null,
-      }
-    }, {
-      onSuccess: (data: any) => {
-        if (!data || (Array.isArray(data) && data.length === 0)) {
-          toast.warning("No entries found", { description: "Try adjusting your filters." });
-        } else {
-          toast.success("Export successful", { description: "Your file is downloading." });
-          onClose();
-        }
-      },
-      onError: (err: any) => {
-        toast.error("Export failed", { description: err.message || "An unexpected error occurred." });
-      }
-    });
-  };
+  exports({
+    mode: exportType,
+    ids: exportType === "selected" ? selectedRows.map(row => row.id) : undefined,
+    filters: { ...filters, startDateTime: startDateTime.toISOString(), endDateTime: endDateTime?.toISOString() }
+  }, {
+    onSuccess: () => {
+      toast.success("Export successful");
+      onClose();
+    },
+    onError: (err) => toast.error(err.message)
+  });
+};
 
   const hours12 = Array.from({ length: 12 }, (_, i) => (i === 0 ? 12 : i).toString().padStart(2, "0"));
   const minutes = Array.from({ length: 60 }, (_, i) => i.toString().padStart(2, "0"));

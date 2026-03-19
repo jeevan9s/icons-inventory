@@ -13,13 +13,13 @@ import { getStockStatus } from "./helpers";
 export const useDatabase = () => {
   const queryClient = useQueryClient();
 
-  const useGetRows = (tableName: TableName) => {
-    return useQuery({
+  const useGetRows = <T = unknown>(tableName: TableName) => {
+    return useQuery<T[]>({
       queryKey: [tableName],
       queryFn: async () => {
         const data = await getData(tableName, "id", true);
         console.log(`received: ${tableName} (${data?.length || 0} rows)`);
-        return data || [];
+        return (data as T[]) || [];
       },
     });
   };

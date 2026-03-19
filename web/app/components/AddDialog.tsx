@@ -11,7 +11,7 @@ type Props = {
 export default function AddDialog({ isOpen, onClose }: Props) {
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Add Item" size="xl">
-
+<h1></h1>
     </Modal>
   )
 }

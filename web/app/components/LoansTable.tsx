@@ -24,23 +24,10 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { motion } from "framer-motion";
 import { getLoanStatus } from "@/services/lib/hooks/helpers";
-import { getDataFiltered } from "@/services/lib/database-functions/databaseHelpers";
 import { format } from "date-fns";
-
-export type LoanRow = {
-  id: number;
-  item: string;
-  signee: string;
-  student_number: string; 
-  student_name: string;
-  location: string;
-  notes: string;
-  time_out: string;
-  time_in: string;
-  status: string;
-  display_name?: string;
-  item_name?: string;
-};
+import { formatCapitalized } from "@/services/lib/helpers";
+import { LoanRow } from "@/services/lib/types";
+import { enrichData, loanFetcher } from "@/services/lib/helpers";
 
 interface LoansTableProps {
   data: LoanRow[];
@@ -56,54 +43,13 @@ export default function LoansTable({
   const [rowSelection, setRowSelection] = useState({});
   const [enrichedData, setEnrichedData] = useState<LoanRow[]>([]);
 
-  // Helper to capitalize every word (e.g., "room 302" -> "Room 302")
-  const formatCapitalized = (text: string | null | undefined) => {
-    if (!text || text === "—") return "—";
-    return text
-      .toLowerCase()
-      .split(" ")
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(" ");
-  };
-
   useEffect(() => {
-    const enrich = async () => {
-      const updated = await Promise.all(
-        data.map(async (row) => {
-          const [profile, loanItems] = await Promise.all([
-            getDataFiltered("Profiles", "id", "e", row.signee),
-            getDataFiltered("Loan Items", "loan_id", "e", row.id),
-          ]);
-
-          const itemDetails = await Promise.all(
-            (loanItems || []).map(async (li: any) => {
-              const stock = await getDataFiltered(
-                "Stock",
-                "id",
-                "e",
-                li.item_id,
-              );
-              const rawName = stock?.[0]?.name || "Unknown";
-              return rawName.charAt(0).toUpperCase() + rawName.slice(1);
-            }),
-          );
-
-          return {
-            ...row,
-            display_name: profile?.[0]?.name || "—",
-            item_name: itemDetails.length > 0 ? itemDetails.join(", ") : "—",
-          };
-        }),
-      );
-      setEnrichedData(updated);
-    };
-
-    if (data?.length > 0) {
-      enrich();
-    } else {
-      setEnrichedData([]);
-    }
-  }, [data]);
+  if (data?.length > 0) {
+    enrichData(data, loanFetcher).then(setEnrichedData);
+  } else {
+    setEnrichedData([]);
+  }
+}, [data]);
 
   const columns = useMemo<ColumnDef<LoanRow>[]>(
     () => [
@@ -175,7 +121,7 @@ export default function LoansTable({
         cell: ({ row }) => (
           <span className="font-mono text-xs text-neutral-400">
             {row.original.student_number ||
-              (row.original as any).student_number ||
+              (row.original as LoanRow).student_number ||
               "—"}
           </span>
         ),
@@ -274,6 +220,7 @@ export default function LoansTable({
     [],
   );
 
+  // @eslint-disable-next-line react-compiler/react-compiler
   const table = useReactTable({
     data: enrichedData,
     columns,
