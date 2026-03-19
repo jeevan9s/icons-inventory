@@ -176,3 +176,20 @@ export async function exportTable<table_name extends keyof Database['public']['T
     URL.revokeObjectURL(url);
 }
 
+export async function insertEntry<T extends keyof Database["public"]["Tables"], row extends Database["public"]["Tables"][T]["Insert"]>
+(table: T, data: row) {
+  const { data: insertedData, error } = await supabase
+    .from(table)
+    .insert(data as any)
+    .select();
+
+  if (error) {
+    console.error(`Error inserting into ${String(table)}:`, error);
+    return null;
+  }
+
+  console.log(data);
+
+  return insertedData;
+}
+
