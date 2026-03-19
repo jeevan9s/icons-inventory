@@ -1,4 +1,6 @@
 "use client"; // must be a Client Component to use browser APIs
+
+import Papa from "papaparse";
 import { Database } from './database.types';
 import { createClient } from '@supabase/supabase-js'
 
@@ -171,4 +173,71 @@ export async function exportTable<table_name extends keyof Database['public']['T
     anchor.click();
     document.body.removeChild(anchor);
     URL.revokeObjectURL(url);
+}
+export async function insertEntry<T extends keyof Database["public"]["Tables"], row extends Database["public"]["Tables"][T]["Insert"]>
+(table: T, data: row) {
+  const { data: insertedData, error } = await supabase
+    .from(table)
+    .insert(data as any)
+    .select();
+
+  if (error) {
+    console.error(`Error inserting into ${String(table)}:`, error);
+    return null;
+  }
+
+  console.log(data);
+
+  return insertedData;
+}
+
+export async function updateEntry<T extends keyof Database["public"]["Tables"], row extends Database["public"]["Tables"][T]["Update"]>
+(table: T, id: Database["public"]["Tables"][T]["Row"]["id"], updatedData: row) {
+  const { data, error } = await supabase
+    .from(table)
+    .update(updatedData as any)
+    .eq("id", id as any)
+    .select();
+
+  if (error) {
+    console.error(`Error updating ${String(table)} with id ${id}:`, error);
+    return null;
+  }
+
+  return data;
+}
+
+export async function importCSV<table_name extends keyof Database["public"]["Tables"]>(table: table_name,file: File) {
+  const text = await file.text();
+
+  const parsed = Papa.parse<Database["public"]["Tables"][table_name]["Insert"]>(text, {
+    header: true,
+    skipEmptyLines: true,
+    dynamicTyping: true
+  });
+
+  if (parsed.errors.length > 0) {
+    console.error("CSV parse errors:", parsed.errors);
+    return null;
+  }
+
+  const rows = parsed.data as Database["public"]["Tables"][table_name]["Insert"][];
+
+  if (rows.length === 0) {
+    console.log("CSV file has no data."); 
+    return null;
+  }
+
+  const { data, error } = await supabase
+    .from(table)
+    .insert(rows as any)
+    .select();
+
+  if (error) {
+    console.error("Error importing CSV:", error);
+    return null;
+  }
+
+  console.log(`Successfully imported CSV into ${String(table)}`, data);
+  return data;
 }
