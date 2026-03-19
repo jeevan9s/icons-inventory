@@ -78,7 +78,7 @@ export default function InventoryTable({
           />
         ),
         cell: ({ getValue }) => (
-          <span className="text-neutral-800 font-medium capitalize">
+          <span className="text-neutral-800 font-mp font-medium capitalize">
             {(getValue() as string)?.toLowerCase()}
           </span>
         ),
@@ -94,7 +94,7 @@ export default function InventoryTable({
           />
         ),
         cell: ({ getValue }) => (
-          <span className="text-neutral-600">{getValue() as number}</span>
+          <span className="text-neutral-600 font-mp">{getValue() as number}</span>
         ),
       },
       {
@@ -108,7 +108,7 @@ export default function InventoryTable({
           />
         ),
         cell: ({ getValue }) => (
-          <span className="text-neutral-600 font-semibold">
+          <span className="text-neutral-600 font-mp font-semibold">
             {getValue() as number}
           </span>
         ),
@@ -125,7 +125,7 @@ export default function InventoryTable({
           />
         ),
         cell: ({ getValue }) => (
-          <span className="text-neutral-400 text-xs capitalize">
+          <span className="text-neutral-400 text-xs capitalize font-mp">
             {(getValue() as string)?.toLowerCase()}
           </span>
         ),
@@ -148,7 +148,7 @@ export default function InventoryTable({
         id: "actions",
         header: () => null,
         cell: () => (
-          <button className="text-neutral-300 hover:text-neutral-700 transition-colors">
+          <button className="text-neutral-300 font-mp hover:text-neutral-700 transition-colors">
             <MoreVertical size={14} />
           </button>
         ),

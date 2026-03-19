@@ -25,9 +25,10 @@ import {
   Package, 
   ClipboardList,
   Calendar as CalendarIcon,
-  X
+  X,
+  Plus
 } from "lucide-react";
-import { format,  isAfter } from "date-fns";
+import { format, isAfter } from "date-fns";
 import { useDatabase } from "@/services/lib/hooks/useDatabase";
 import { TableName } from "@/services/lib/hooks/types";
 import { createDateTime } from "@/services/lib/helpers";
@@ -54,6 +55,8 @@ export default function ExportDialog({
 }: Props) {
   const [tableType, setTableType] = useState<TableType>(initialTableType);
   const [exportType, setExportType] = useState<ExportOptions>(hasSelectedRows ? "selected" : "all");
+  
+  const [useStartDate, setUseStartDate] = useState(false);
   const [useEndDate, setUseEndDate] = useState(false);
   
   const [filters, setFilters] = useState({
@@ -74,33 +77,47 @@ export default function ExportDialog({
   const { useExport } = useDatabase(); 
   const { mutate: exports, isPending } = useExport(tableType as TableName);
 
+  const handleExport = () => {
+    const startDateTime = useStartDate 
+      ? createDateTime(filters.startDate, filters.startHour, filters.startMinute, filters.startPeriod)
+      : null;
+    
+    const endDateTime = useEndDate 
+      ? createDateTime(filters.endDate, filters.endHour, filters.endMinute, filters.endPeriod)
+      : null;
 
-
-const handleExport = () => {
-  const startDateTime = createDateTime(filters.startDate, filters.startHour, filters.startMinute, filters.startPeriod);
-  
-  let endDateTime = null;
-  if (useEndDate) {
-    endDateTime = createDateTime(filters.endDate, filters.endHour, filters.endMinute, filters.endPeriod);
-
-    if (exportType === "filtered" && isAfter(startDateTime, endDateTime)) {
+    if (startDateTime && endDateTime && isAfter(startDateTime, endDateTime)) {
       toast.error("Invalid Range", { description: "Start time cannot be after end time." });
       return;
     }
-  }
 
-  exports({
-    mode: exportType,
-    ids: exportType === "selected" ? selectedRows.map(row => row.id) : undefined,
-    filters: { ...filters, startDateTime: startDateTime.toISOString(), endDateTime: endDateTime?.toISOString() }
-  }, {
-    onSuccess: () => {
-      toast.success("Export successful");
-      onClose();
-    },
-    onError: (err) => toast.error(err.message)
-  });
-};
+    const toastId = toast.loading("Preparing your export...", {
+      description: "Gathering data."
+    });
+
+    exports({
+      mode: exportType,
+      ids: exportType === "selected" ? selectedRows.map(row => row.id) : undefined,
+      filters: { 
+        ...filters, 
+        startDateTime: startDateTime?.toISOString() || null, 
+        endDateTime: endDateTime?.toISOString() || null 
+      }
+    }, {
+      onSuccess: (data) => {
+        if (Array.isArray(data) && data.length === 0) {
+          toast.error("No data found", { 
+            description: "No rows matched your selected filters.", 
+            id: toastId 
+          });
+        } else {
+          toast.success("Export successful", { id: toastId });
+          onClose();
+        }
+      },
+      onError: (err) => toast.error(err.message, { id: toastId })
+    });
+  };
 
   const hours12 = Array.from({ length: 12 }, (_, i) => (i === 0 ? 12 : i).toString().padStart(2, "0"));
   const minutes = Array.from({ length: 60 }, (_, i) => i.toString().padStart(2, "0"));
@@ -163,9 +180,9 @@ const handleExport = () => {
                     onChange={(e) => setFilters({...filters, status: e.target.value})}
                   >
                     <option value="all">All Statuses</option>
-                    <option value="in stock">In Stock</option>
-                    <option value="low stock">Low Stock</option>
-                    <option value="out of stock">Out of Stock</option>
+                    <option value="Available">Available</option>
+                    <option value="Low Stock">Low Stock</option>
+                    <option value="Out of Stock">Out of Stock</option>
                   </select>
                 </div>
                 <div className="space-y-2">
@@ -190,77 +207,88 @@ const handleExport = () => {
               <>
                 <div className="space-y-3 md:col-span-2">
                   <Label className="text-[10px] font-bold text-neutral-500 uppercase flex items-center gap-1"><Clock size={12} /> Precise Loan Timeframe</Label>
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-6 gap-2 items-end">
-                      <div className="sm:col-span-3 space-y-1">
-                        <span className="text-[9px] text-neutral-400 uppercase font-bold pl-1">Start Date</span>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <Button variant="outline" className="w-full h-10 justify-start text-xs bg-white">
-                              <CalendarIcon className="mr-2 h-3 w-3" />
-                              {format(filters.startDate, "PP")}
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0 z-[9999]" align="start">
-                            <Calendar mode="single" selected={filters.startDate} onSelect={(d) => d && setFilters({...filters, startDate: d})} initialFocus />
-                          </PopoverContent>
-                        </Popover>
+                  <div className="space-y-2">
+                    {useStartDate ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-6 gap-2 items-end bg-white p-2 rounded-lg border border-neutral-200">
+                        <div className="sm:col-span-3 space-y-1">
+                          <div className="flex justify-between items-center pr-1">
+                            <span className="text-[9px] text-neutral-400 uppercase font-bold pl-1">Start Date</span>
+                            <button onClick={() => setUseStartDate(false)} className="text-neutral-400 hover:text-red-500 transition-colors"><X size={10} /></button>
+                          </div>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button variant="outline" className="w-full h-10 justify-start text-xs bg-white border-neutral-200">
+                                <CalendarIcon className="mr-2 h-3 w-3" />
+                                {format(filters.startDate, "PP")}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0 z-[9999]" align="start">
+                              <Calendar mode="single" selected={filters.startDate} onSelect={(d) => d && setFilters({...filters, startDate: d})} initialFocus />
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+                        <div className="flex gap-1 sm:col-span-3">
+                          <select value={filters.startHour} onChange={(e) => setFilters({...filters, startHour: e.target.value})} className="flex-1 h-10 rounded-md border border-input bg-white text-xs">
+                            {hours12.map(h => <option key={h} value={h}>{h}</option>)}
+                          </select>
+                          <select value={filters.startMinute} onChange={(e) => setFilters({...filters, startMinute: e.target.value})} className="flex-1 h-10 rounded-md border border-input bg-white text-xs">
+                            {minutes.map(m => <option key={m} value={m}>{m}</option>)}
+                          </select>
+                          <select value={filters.startPeriod} onChange={(e) => setFilters({...filters, startPeriod: e.target.value})} className="w-14 h-10 rounded-md border border-input bg-white text-xs font-bold">
+                            <option value="AM">AM</option>
+                            <option value="PM">PM</option>
+                          </select>
+                        </div>
                       </div>
-                      <div className="flex gap-1 sm:col-span-3">
-                        <select value={filters.startHour} onChange={(e) => setFilters({...filters, startHour: e.target.value})} className="flex-1 h-10 rounded-md border border-input bg-white text-xs">
-                          {hours12.map(h => <option key={h} value={h}>{h}</option>)}
-                        </select>
-                        <select value={filters.startMinute} onChange={(e) => setFilters({...filters, startMinute: e.target.value})} className="flex-1 h-10 rounded-md border border-input bg-white text-xs">
-                          {minutes.map(m => <option key={m} value={m}>{m}</option>)}
-                        </select>
-                        <select value={filters.startPeriod} onChange={(e) => setFilters({...filters, startPeriod: e.target.value})} className="w-14 h-10 rounded-md border border-input bg-white text-xs font-bold">
-                          <option value="AM">AM</option>
-                          <option value="PM">PM</option>
-                        </select>
-                      </div>
-                    </div>
+                    ) : (
+                      <Button 
+                        variant="ghost" 
+                        onClick={() => setUseStartDate(true)}
+                        className="w-full border border-dashed border-neutral-300 text-neutral-400 text-[10px] font-bold uppercase h-10 hover:bg-neutral-100 hover:text-neutral-600"
+                      >
+                        <Plus size={12} className="mr-2"/> Add Start Date Constraint
+                      </Button>
+                    )}
                     
                     {useEndDate ? (
-                       <div className="grid grid-cols-1 sm:grid-cols-6 gap-2 items-end">
-                       <div className="sm:col-span-3 space-y-1">
-                         <div className="flex justify-between items-center pr-1">
+                      <div className="grid grid-cols-1 sm:grid-cols-6 gap-2 items-end bg-white p-2 rounded-lg border border-neutral-200">
+                        <div className="sm:col-span-3 space-y-1">
+                          <div className="flex justify-between items-center pr-1">
                             <span className="text-[9px] text-neutral-400 uppercase font-bold pl-1">End Date</span>
-                            <button onClick={() => setUseEndDate(false)} className="text-neutral-400 hover:text-red-500 transition-colors">
-                                <X size={10} />
-                            </button>
-                         </div>
-                         <Popover>
-                           <PopoverTrigger asChild>
-                             <Button variant="outline" className="w-full h-10 justify-start text-xs bg-white border-neutral-300">
-                               <CalendarIcon className="mr-2 h-3 w-3" />
-                               {format(filters.endDate, "PP")}
-                             </Button>
-                           </PopoverTrigger>
-                           <PopoverContent className="w-auto p-0 z-[9999]" align="start">
-                             <Calendar mode="single" selected={filters.endDate} onSelect={(d) => d && setFilters({...filters, endDate: d})} initialFocus />
-                           </PopoverContent>
-                         </Popover>
-                       </div>
-                       <div className="flex gap-1 sm:col-span-3">
-                         <select value={filters.endHour} onChange={(e) => setFilters({...filters, endHour: e.target.value})} className="flex-1 h-10 rounded-md border border-input bg-white text-xs">
-                           {hours12.map(h => <option key={h} value={h}>{h}</option>)}
-                         </select>
-                         <select value={filters.endMinute} onChange={(e) => setFilters({...filters, endMinute: e.target.value})} className="flex-1 h-10 rounded-md border border-input bg-white text-xs">
-                           {minutes.map(m => <option key={m} value={m}>{m}</option>)}
-                         </select>
-                         <select value={filters.endPeriod} onChange={(e) => setFilters({...filters, endPeriod: e.target.value})} className="w-14 h-10 rounded-md border border-input bg-white text-xs font-bold">
-                           <option value="AM">AM</option>
-                           <option value="PM">PM</option>
-                         </select>
-                       </div>
-                     </div>
+                            <button onClick={() => setUseEndDate(false)} className="text-neutral-400 hover:text-red-500 transition-colors"><X size={10} /></button>
+                          </div>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button variant="outline" className="w-full h-10 justify-start text-xs bg-white border-neutral-200">
+                                <CalendarIcon className="mr-2 h-3 w-3" />
+                                {format(filters.endDate, "PP")}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0 z-[9999]" align="start">
+                              <Calendar mode="single" selected={filters.endDate} onSelect={(d) => d && setFilters({...filters, endDate: d})} initialFocus />
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+                        <div className="flex gap-1 sm:col-span-3">
+                          <select value={filters.endHour} onChange={(e) => setFilters({...filters, endHour: e.target.value})} className="flex-1 h-10 rounded-md border border-input bg-white text-xs">
+                            {hours12.map(h => <option key={h} value={h}>{h}</option>)}
+                          </select>
+                          <select value={filters.endMinute} onChange={(e) => setFilters({...filters, endMinute: e.target.value})} className="flex-1 h-10 rounded-md border border-input bg-white text-xs">
+                            {minutes.map(m => <option key={m} value={m}>{m}</option>)}
+                          </select>
+                          <select value={filters.endPeriod} onChange={(e) => setFilters({...filters, endPeriod: e.target.value})} className="w-14 h-10 rounded-md border border-input bg-white text-xs font-bold">
+                            <option value="AM">AM</option>
+                            <option value="PM">PM</option>
+                          </select>
+                        </div>
+                      </div>
                     ) : (
                       <Button 
                         variant="ghost" 
                         onClick={() => setUseEndDate(true)}
                         className="w-full border border-dashed border-neutral-300 text-neutral-400 text-[10px] font-bold uppercase h-10 hover:bg-neutral-100 hover:text-neutral-600"
                       >
-                        + Add End Date Constraint
+                        <Plus size={12} className="mr-2"/> Add End Date Constraint
                       </Button>
                     )}
                   </div>

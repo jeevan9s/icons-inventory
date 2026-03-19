@@ -87,7 +87,7 @@ export default function LoansTable({
           />
         ),
         cell: ({ getValue }) => (
-          <span className="text-neutral-800 font-medium">
+          <span className="text-neutral-800 font-medium font-mp">
             {getValue() as string}
           </span>
         ),
@@ -103,7 +103,7 @@ export default function LoansTable({
           />
         ),
         cell: ({ getValue }) => (
-          <span className="text-neutral-600">
+          <span className="text-neutral-600 font-mp">
             {formatCapitalized(getValue() as string)}
           </span>
         ),
@@ -119,7 +119,7 @@ export default function LoansTable({
           />
         ),
         cell: ({ row }) => (
-          <span className="font-mono text-xs text-neutral-400">
+          <span className="font-mono text-xs font-mp text-neutral-400">
             {row.original.student_number ||
               (row.original as LoanRow).student_number ||
               "—"}
@@ -137,7 +137,7 @@ export default function LoansTable({
           />
         ),
         cell: ({ getValue }) => (
-          <span className="text-neutral-600">{getValue() as string}</span>
+          <span className="text-neutral-600 font-mp ">{getValue() as string}</span>
         ),
       },
       {
@@ -163,7 +163,7 @@ export default function LoansTable({
           />
         ),
         cell: ({ getValue }) => (
-          <span className="text-neutral-600">
+          <span className="text-neutral-600 font-mp">
             {formatCapitalized(getValue() as string)}
           </span>
         ),
@@ -181,7 +181,7 @@ export default function LoansTable({
         cell: ({ getValue }) => {
           const date = getValue() as string;
           return (
-            <span className="font-mono text-xs text-neutral-400">
+            <span className="font-mono text-xs font-mp text-neutral-400">
               {date ? format(new Date(date), "MMM d, h:mm b") : "—"}
             </span>
           );
@@ -200,7 +200,7 @@ export default function LoansTable({
         cell: ({ getValue }) => {
           const date = getValue() as string;
           return (
-            <span className="font-mono text-xs text-neutral-400">
+            <span className="font-mono text-xs font-mp text-neutral-400">
               {date ? format(new Date(date), "MMM d, h:mm b") : "—"}
             </span>
           );

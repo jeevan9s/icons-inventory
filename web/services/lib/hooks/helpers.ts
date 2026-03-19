@@ -1,7 +1,7 @@
 // general helpers for frontend hooks 
 
-import { InventoryRow } from "@/app/components/InventoryTable";
-import { LoanRow } from "@/app/components/LoansTable";
+import { InventoryRow } from "../types";
+import { LoanRow } from "../types";
 
 // status helpers
 

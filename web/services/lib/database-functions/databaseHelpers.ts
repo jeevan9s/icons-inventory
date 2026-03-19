@@ -149,17 +149,21 @@ export async function deleteById<table_name extends keyof Database['public']['Ta
 
 //  Export table function takes in a name of a table in the database and exports it to the browser downloader
 //  as a table_name.csv
-export async function exportTable<table_name extends keyof Database['public']['Tables']> (table: table_name) {
-    let entries: Array<Object> = await getData(table, 'id', true, -1);
+export async function exportTable<table_name extends keyof Database['public']['Tables']> (table: table_name, data?: unknown[]) { // added optional data parameter for exporting by filters and selection
+    const entries: any[] = data ? data : await getData(table, 'id', true, -1);
     if (entries.length === 0) {
         console.log("No entries to export");
         return;
     }
-    let headers: string[] = Object.keys(entries[0]);
+    const headers: string[] = Object.keys(entries[0]);
     let csvContent: string = headers.join(",") + "\n";
     entries.forEach((entry) => {
         Object.values(entry).forEach((value) => {
-            csvContent += `"${value}",`;
+            let formatted  = typeof value == "object" && value ? JSON.stringify(value) : value // added serialization layer to properly display JSON field in "Stock" table after export
+            formatted = String(formatted ?? "");
+
+            csvContent += `"${formatted.replace(/"/g, '""')}",`
+
         })
         csvContent += "\n";
     });
@@ -174,6 +178,7 @@ export async function exportTable<table_name extends keyof Database['public']['T
     document.body.removeChild(anchor);
     URL.revokeObjectURL(url);
 }
+
 export async function insertEntry<T extends keyof Database["public"]["Tables"], row extends Database["public"]["Tables"][T]["Insert"]>
 (table: T, data: row) {
   const { data: insertedData, error } = await supabase
