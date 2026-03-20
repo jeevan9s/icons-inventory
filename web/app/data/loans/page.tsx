@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Layout from "@/app/components/Layout";
-import { useDatabase } from "@/services/lib/hooks/useDatabase";
+import { useGetRows } from "@/services/lib/hooks/useDatabase";
 import { Plus, Download } from "lucide-react";
 import { useDialog } from "@/services/lib/hooks/useDialog";
 import AddDialog from "@/app/components/AddDialog";
@@ -11,7 +11,6 @@ import LoansTable from "@/app/components/LoansTable";
 import { InventoryRow, LoanRow } from "@/services/lib/types";
 
 export default function LoanPage() {
-  const { useGetRows } = useDatabase();
   const { data: loanData = [] } = useGetRows("Loans");
 
   const [selectedRows, setSelectedRows] = useState<(InventoryRow | LoanRow)[]>(

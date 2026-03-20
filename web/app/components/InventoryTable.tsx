@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import {
   SortingState,
   ColumnDef,
@@ -38,6 +38,7 @@ export default function InventoryTable({
   const [sorting, setSorting] = useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
   const [rowSelection, setRowSelection] = useState({});
+  const previousSelectionRef = useRef<InventoryRow[]>([]);
 
   const columns = useMemo<ColumnDef<InventoryRow>[]>(
     () => [
@@ -177,18 +178,19 @@ export default function InventoryTable({
       const selectedData = table
         .getSelectedRowModel()
         .rows.map((row) => row.original);
-      onSelectionChange(selectedData);
+      
+      // Only call onSelectionChange if the actual selected rows changed
+      const hasChanged = 
+        selectedData.length !== previousSelectionRef.current.length ||
+        selectedData.some((row, idx) => row.id !== previousSelectionRef.current[idx]?.id);
+      
+      if (hasChanged) {
+        previousSelectionRef.current = selectedData;
+        onSelectionChange(selectedData);
+      }
     }
-  }, [rowSelection, table, onSelectionChange]);
-
-  useEffect(() => {
-    if (onSelectionChange) {
-      const selectedRows = table
-        .getSelectedRowModel()
-        .rows.map((row) => row.original);
-      onSelectionChange(selectedRows);
-    }
-  }, [rowSelection, onSelectionChange, table]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rowSelection]);
 
   return (
     <div className="flex flex-col h-full bg-white">

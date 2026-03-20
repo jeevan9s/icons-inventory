@@ -11,15 +11,15 @@ export function useDialog<T extends { isOpen: boolean; onClose: () => void }>(
   const open = useCallback(() => setIsOpen(true), []);
   const close = useCallback(() => setIsOpen(false), []);
 
-  const Dialog = (props: Omit<T, "isOpen" | "onClose">) => {
-    return (
+  const Dialog = useCallback(
+    (props: Omit<T, "isOpen" | "onClose">) =>
       <Component 
         {...(props as T)} 
         isOpen={isOpen} 
         onClose={close} 
-      />
-    );
-  };
+      />,
+    [Component, isOpen, close]
+  );
 
   return { Dialog, open, close, isOpen };
 }

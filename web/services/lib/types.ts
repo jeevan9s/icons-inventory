@@ -12,6 +12,7 @@ export type LoanRow = {
   time_in: string;
   status: string;
   display_name?: string;
+  equipment_type?: equipmentType
   item_name?: string;
 };
 
@@ -30,6 +31,7 @@ export interface LoanItemRow {
   id: number;
   loan_id: number;
   item_id: number;
+  status?: string;
 }
 
 export type ActivityItem = {

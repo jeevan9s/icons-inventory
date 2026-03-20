@@ -1,48 +1,50 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { deleteById, exportTable } from "../database-functions/databaseHelpers";
-import { TableName } from "./types";
-import { getData } from "../database-functions/databaseHelpers";
-import { getDataFiltered } from "../database-functions/databaseHelpers";
-import { filterQualifier } from "./types";
-import { getLoanStatus } from "./helpers";
-import { getStockStatus } from "./helpers";
+import { TableName, filterQualifier } from "./types";
 import { Database } from "../database-functions/database.types";
-import { insertEntry } from "../database-functions/databaseHelpers";
+import {
+  getDataFiltered,
+  insertEntry,
+  getData,
+  deleteById,
+  exportTable,
+  importCSV,
+  updateEntry,
+} from "../database-functions/databaseHelpers";
+import { getLoanStatus, getStockStatus } from "./helpers";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 // query -> read/fetch data
 // mutate -> update, create, and delete data
 
-export const useDatabase = () => {
-  const queryClient = useQueryClient();
+// fetch all database rows
+export const useGetRows = (tableName: TableName) => {
+  return useQuery({
+    queryKey: [tableName],
+    queryFn: async () => {
+      const data = await getData(tableName, "id", true);
+      console.log(`received: ${tableName} (${data?.length || 0} rows)`);
+      return data || [];
+    },
+  });
+};
 
-  // fetch all database rows
-  const useGetRows = (tableName: TableName) => {
-    return useQuery({
-      queryKey: [tableName],
-      queryFn: async () => {
-        const data = await getData(tableName, "id", true);
-        console.log(`received: ${tableName} (${data?.length || 0} rows)`);
-        return data || [];
-      },
-    });
-  };
+// delete a row from a table
+export const useDeleteRow = (tableName: TableName) => {
+  const queryClient = useQueryClient()
 
-  // delete a row from a table
-  const useDeleteRow = (tableName: TableName) => {
-    return useMutation({
-      mutationFn: (id: number) => deleteById(tableName, id),
-      onSuccess: (_, id) => {
-        queryClient.invalidateQueries({ queryKey: [tableName] });
-        console.log(`deleted ${tableName} item #`, id);
-      },
-      onError: (error: Error) => {
-        console.error(`deletion failed:`, error.message);
-      },
-    });
-  };
+  return useMutation({
+    mutationFn: (id: number) => deleteById(tableName, id),
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: [tableName] });
+      console.log(`deleted ${tableName} item #`, id);
+    },
+    onError: (error: Error) => {
+      console.error(`deletion failed:`, error.message);
+    },
+  });
+};
 
-  // export data for any table using filters or a full export
-const useExport = (tableName: TableName) => {
+// export data for any table using filters or a full export
+export const useExport = (tableName: TableName) => {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -85,10 +87,17 @@ const useExport = (tableName: TableName) => {
               }
             }
           } else if (tableName === "Loans") {
-            if (signeeName) {
-              const profile = await getDataFiltered("Profiles", "id", "e", row.signee);
+            if (signeeName && row.signee && row.signee !== null && row.signee !== undefined) {
+              const profile = await getDataFiltered(
+                "Profiles",
+                "id",
+                "e",
+                row.signee,
+              );
               const actualName = profile?.[0]?.name || row.student_name || "";
-              if (!actualName.toLowerCase().includes(signeeName.toLowerCase())) {
+              if (
+                !actualName.toLowerCase().includes(signeeName.toLowerCase())
+              ) {
                 keepRow = false;
               }
             }
@@ -108,6 +117,17 @@ const useExport = (tableName: TableName) => {
 
         if (keepRow) {
           if (tableName === "Loans") {
+            // Skip enrichment if required fields are missing or invalid
+            if (!row.signee || !row.id || row.signee === null || row.id === null || row.signee === undefined || row.id === undefined) {
+              enrichedFilteredData.push({
+                ...row,
+                signee: row.student_name || "-",
+                item_name: "-",
+                status: getLoanStatus(row),
+              });
+              continue;
+            }
+
             const [profile, loanItems] = await Promise.all([
               getDataFiltered("Profiles", "id", "e", row.signee),
               getDataFiltered("Loan Items", "loan_id", "e", row.id),
@@ -115,16 +135,30 @@ const useExport = (tableName: TableName) => {
 
             const itemDetails = await Promise.all(
               (loanItems || []).map(async (li: any) => {
-                const stock = await getDataFiltered("Stock", "id", "e", li.item_id);
+                if (!li.item_id || li.item_id === null || li.item_id === undefined) return { name: "Unknown", equipment_type: undefined };
+                const stock = await getDataFiltered(
+                  "Stock",
+                  "id",
+                  "e",
+                  li.item_id,
+                );
                 const name = stock?.[0]?.name || "Unknown";
-                return name.charAt(0).toUpperCase() + name.slice(1);
+                const equipment_type = stock?.[0]?.item_properties?.equipment_type;
+                return {
+                  name: name.charAt(0).toUpperCase() + name.slice(1),
+                  equipment_type
+                };
               }),
             );
+
+            // Get the first equipment_type from the items (assuming loans have one primary equipment type)
+            const equipment_type = itemDetails.find(item => item.equipment_type)?.equipment_type;
 
             enrichedFilteredData.push({
               ...row,
               signee: profile?.[0]?.name || row.student_name || "-",
-              item_name: itemDetails.length > 0 ? itemDetails.join(", ") : "-",
+              item_name: itemDetails.length > 0 ? itemDetails.map(item => item.name).join(", ") : "-",
+              equipment_type,
               status: getLoanStatus(row),
             });
           } else {
@@ -135,14 +169,14 @@ const useExport = (tableName: TableName) => {
 
       if (enrichedFilteredData.length === 0) return [];
 
-      const sanitizedData = enrichedFilteredData.map(row => {
+      const sanitizedData = enrichedFilteredData.map((row) => {
         const newRow = { ...row };
         for (const key in newRow) {
-          if (typeof newRow[key] === 'string') {
+          if (typeof newRow[key] === "string") {
             newRow[key] = newRow[key]
-              .replace(/[\u2013\u2014]/g, "-") 
-              .replace(/[\u2018\u2019]/g, "'") 
-              .replace(/[\u201C\u201D]/g, '"'); 
+              .replace(/[\u2013\u2014]/g, "-")
+              .replace(/[\u2018\u2019]/g, "'")
+              .replace(/[\u201C\u201D]/g, '"');
           }
         }
         return newRow;
@@ -155,40 +189,118 @@ const useExport = (tableName: TableName) => {
     },
   });
 };
-  // filter rows based on comparison with a qualifier and term
-  const useRowFiltered = <T extends TableName, C extends keyof Database['public']['Tables'][T]['Row']>
-  (tableName: T, column: C, qualifier: filterQualifier, filterTerm: Database['public']['Tables'][T]['Row'][C]) => {
-    return useQuery({
-      queryKey: [tableName, column, qualifier, filterTerm],
-          queryFn: async () => {
-        const data = await getDataFiltered(tableName, column, qualifier, filterTerm); 
-        console.log(`Filtered ${tableName}`, data);
-        if (!data) throw new Error(`Filter failed for ${tableName}`);
-        return data;
-      },
-    });
-  };
+// filter rows based on comparison with a qualifier and term
+export const useRowFiltered = <
+  T extends TableName,
+  C extends keyof Database["public"]["Tables"][T]["Row"],
+>(
+  tableName: T,
+  column: C,
+  qualifier: filterQualifier,
+  filterTerm: Database["public"]["Tables"][T]["Row"][C],
+) => {
+  return useQuery({
+    queryKey: [tableName, column, qualifier, filterTerm],
+    queryFn: async () => {
+      const data = await getDataFiltered(
+        tableName,
+        column,
+        qualifier,
+        filterTerm,
+      );
+      console.log(`Filtered ${tableName}`, data);
+      if (!data) throw new Error(`Filter failed for ${tableName}`);
+      return data;
+    },
+  });
+};
 
-  // insert a row into a tabnle
-  const useRowInsert = <T extends keyof Database['public']['Tables']>() => {
-    return useMutation({
-      mutationFn: async (params: {table: T, data: Database["public"]["Tables"][T]["Insert"]}
-     )  => {
-      const {table, data} = params
-      const result = await insertEntry(table, data); 
+// insert a row into a tabnle
+export const useRowInsert = <
+  T extends keyof Database["public"]["Tables"],
+>() => {
+  return useMutation({
+    mutationFn: async (params: {
+      table: T;
+      data: Database["public"]["Tables"][T]["Insert"];
+    }) => {
+      const { table, data } = params;
+      const result = await insertEntry(table, data);
       console.log(`Inserted into ${table}`, data);
 
       if (!result) {
-        throw new Error(`insert failed for ${String(table)}`)
+        throw new Error(`insert failed for ${String(table)}`);
       }
 
       return result;
-    }
-    });
-  };
-
-  // import a CSV to populate a table
-
-  return { useGetRows, useDeleteRow, useExport, useRowFiltered, useRowInsert };
+    },
+  });
 };
 
+// import a CSV to populate a table
+export const useImport = <T extends keyof Database["public"]["Tables"]>(
+  table: T,
+) => {
+  const queryClient = useQueryClient();
+  const mutation = useMutation({
+    mutationFn: async (file: File) => {
+      const result = await importCSV(table, file);
+      if (!result) throw new Error(`Import failed for ${String(table)}`);
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [table] });
+    },
+  });
+
+  // open the file picker
+  const openPicker = () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".csv"; // force csv input
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) mutation.mutate(file);
+    };
+    input.click();
+  };
+
+  return {
+    ...mutation,
+    openPicker,
+  };
+};
+
+// hook for updating entries, stock - rows
+export const useUpdateRow = <T extends keyof Database["public"]["Tables"]>(
+  table: T,
+) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string | number;
+      data: Database["public"]["Tables"][T]["Update"];
+    }) => {
+      const result = await updateEntry(table, id, data);
+
+      if (!result) {
+        throw new Error(`Update failed for ${String(table)} at ID: ${id}`);
+      }
+
+      return result;
+    },
+    onSuccess: async (updatedData, variables) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: [table] }),
+        queryClient.invalidateQueries({ queryKey: [table, variables.id] }),
+      ]);
+    },
+    onError: (error: Error) => {
+      console.error(error);
+    },
+  });
+};

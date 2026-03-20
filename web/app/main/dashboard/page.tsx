@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Layout from "@/app/components/Layout";
 import {
   Plus,
@@ -10,11 +10,9 @@ import {
   AlertTriangle,
   Download,
   History,
-  TrendingUp,
   Table as TableIcon,
   LayoutGrid,
   Trash2,
-  Import,
   Upload,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -23,7 +21,7 @@ import LoansTable from "@/app/components/LoansTable";
 import StatCard from "@/app/components/StatCard";
 import DashboardCard from "@/app/components/DashboardCard";
 import ActivityFeed from "@/app/components/ActivityFeed";
-import { useDatabase } from "@/services/lib/hooks/useDatabase";
+import { useGetRows, useDeleteRow } from "@/services/lib/hooks/useDatabase";
 import { useDialog } from "@/services/lib/hooks/useDialog";
 import ExportDialog from "@/app/components/ExportDialog";
 import AddDialog from "@/app/components/AddDialog";
@@ -33,7 +31,6 @@ import {
   getIndicatorColor,
   enrichData,
   loanFetcher,
-  getUnifiedActivity,
 } from "@/services/lib/helpers";
 import { InventoryRow, LoanRow } from "@/services/lib/types";
 import ImportDialog from "@/app/components/ImportDialog";
@@ -42,7 +39,6 @@ type Tab = "inventory" | "loans";
 type ViewMode = "table" | "grid";
 
 export default function Dashboard() {
-  const { useGetRows, useDeleteRow } = useDatabase();
   const deleteStock = useDeleteRow("Stock");
   const deleteLoans = useDeleteRow("Loans");
 
@@ -50,19 +46,20 @@ export default function Dashboard() {
   const [viewMode, setViewMode] = useState<ViewMode>("table");
   const [isExportOpen, setExportOpen] = useState(false);
   const [isImportOpen, setImportOpen] = useState(false);
-  const [selectedRows, setSelectedRows] = useState<(InventoryRow | LoanRow)[]>(
-    [],
-  );
+  const [selectedRows, setSelectedRows] = useState<(InventoryRow | LoanRow)[]>([]);
   const [processedLoans, setProcessedLoans] = useState<LoanRow[]>([]);
 
-  const { data: inventoryData = [] } = useGetRows<InventoryRow>("Stock");
-  const { data: rawLoansData = [] } = useGetRows<LoanRow>("Loans");
+  const { data: inventoryData = [] } = useGetRows("Stock");
+  const { data: rawLoansData = [] } = useGetRows("Loans");
+
+  const typedInventoryData = inventoryData as InventoryRow[];
+  const typedLoansData = rawLoansData as LoanRow[];
 
   const handleClear = async () => {
     const isInventory = tab === "inventory";
     const mutation = isInventory ? deleteStock : deleteLoans;
     const currentData = isInventory
-      ? (inventoryData as InventoryRow[])
+      ? typedInventoryData
       : processedLoans;
     const targets = selectedRows.length > 0 ? selectedRows : currentData;
 
@@ -79,15 +76,35 @@ export default function Dashboard() {
     }
   };
 
+const rawLoansRef = useRef<LoanRow[]>([]);
+
   useEffect(() => {
-    if (rawLoansData.length > 0) {
-      enrichData(rawLoansData, loanFetcher).then((data) =>
-        setProcessedLoans(data as LoanRow[]),
-      );
-    } else {
-      setProcessedLoans([]);
+    if (JSON.stringify(rawLoansRef.current) === JSON.stringify(typedLoansData)) return;
+    rawLoansRef.current = typedLoansData;
+
+    let isMounted = true;
+    
+    if (typedLoansData.length === 0) {
+      setTimeout(() => {
+        if (isMounted) setProcessedLoans([]);
+      }, 0);
+      return () => { isMounted = false; };
     }
-  }, [rawLoansData]);
+
+    enrichData(typedLoansData, loanFetcher).then((newData) => {
+      if (!isMounted) return;
+      setProcessedLoans(newData as LoanRow[]);
+    });
+
+    return () => { isMounted = false; };
+  }, [typedLoansData]);
+
+  const handleSelectionChange = useCallback((rows: (InventoryRow | LoanRow)[]) => {
+    setSelectedRows((prev) => {
+      if (JSON.stringify(prev) === JSON.stringify(rows)) return prev;
+      return rows;
+    });
+  }, []);
 
   const activeLoans = processedLoans.filter((l) =>
     ["Active", "Overdue"].includes(getLoanStatus(l)),
@@ -95,16 +112,11 @@ export default function Dashboard() {
   const returned = processedLoans.filter(
     (l) => getLoanStatus(l) === "Returned",
   ).length;
-  const lowStock = (inventoryData as InventoryRow[]).filter((i) =>
+  const lowStock = typedInventoryData.filter((i) =>
     ["Low Stock", "Out of Stock"].includes(getStockStatus(i)),
   ).length;
 
-  const unifiedActivity = useMemo(
-    () => getUnifiedActivity(processedLoans, inventoryData as InventoryRow[]),
-    [processedLoans, inventoryData],
-  );
-
-  const { Dialog: Add, open: AddOpen } = useDialog(AddDialog);
+  const { open: AddOpen } = useDialog(AddDialog);
 
   return (
     <Layout>
@@ -144,22 +156,22 @@ export default function Dashboard() {
                         setTab(t);
                         setSelectedRows([]);
                       }}
-                      className={`px-4 py-1.5 rounded-md text-xs font-medium transition-all ${tab === t ? "bg-white shadow-sm text-neutral-800" : "text-neutral-400"}`}
+                      className={`px-4 py-1.5 rounded-md text-xs font-medium hover:scale-103 hover:cursor-pointer transition-all duration-200 ease-in-out ${tab === t ? "bg-white shadow-sm text-neutral-800" : "text-neutral-400"}`}
                     >
                       {formatText(t)}
                     </button>
                   ))}
                 </div>
-                <div className="flex items-center gap-0.5 bg-neutral-50 border border-neutral-100 rounded-lg p-0.5">
+                <div className="flex items-center gap-0.5 bg-neutral-50 border border-neutral-100 rounded-lg p-0.5 hover:scale-103 hover:cursor-pointer transition-all duration-200 ease-in-out">
                   <button
                     onClick={() => setViewMode("table")}
-                    className={`p-1.5 rounded-md ${viewMode === "table" ? "bg-white shadow-sm text-neutral-800" : "text-neutral-400"}`}
+                    className={`p-1.5 rounded-md hover:scale-103 hover:cursor-pointer transition-all duration-200 ease-in-out ${viewMode === "table" ? "bg-white shadow-sm text-neutral-800" : "text-neutral-400"}`}
                   >
                     <TableIcon size={14} />
                   </button>
                   <button
                     onClick={() => setViewMode("grid")}
-                    className={`p-1.5 rounded-md ${viewMode === "grid" ? "bg-white shadow-sm text-neutral-800" : "text-neutral-400"}`}
+                    className={`p-1.5 rounded-md hover:scale-103 hover:cursor-pointer transition-all duration-200 ease-in-out ${viewMode === "grid" ? "bg-white shadow-sm text-neutral-800" : "text-neutral-400"}`}
                   >
                     <LayoutGrid size={14} />
                   </button>
@@ -168,7 +180,7 @@ export default function Dashboard() {
               <div className="flex flex-row gap-2">
                 <button
                   onClick={AddOpen}
-                  className="flex items-center gap-1.5 px-4 py-2 bg-neutral-800 text-white text-[11px] rounded-lg hover:bg-neutral-700 hover:cursor-pointer transition-colors font-medium"
+                  className="flex items-center gap-1.5 px-4 py-2 bg-neutral-800 text-white text-[11px] rounded-lg hover:bg-neutral-700 hover:scale-103 hover:cursor-pointer transition-all duration-200 ease-in-out font-medium"
                 >
                   <Plus size={12} />{" "}
                   {tab === "inventory"
@@ -177,7 +189,7 @@ export default function Dashboard() {
                 </button>
                 <button
                   onClick={handleClear}
-                  className={`flex items-center gap-1.5 px-4 py-2 text-[11px] rounded-lg transition-all font-medium border hover:cursor-pointer ${selectedRows.length > 0 ? "bg-red-50 border-red-100 text-red-600 hover:bg-red-100" : "bg-white border-neutral-200 text-neutral-500 hover:bg-neutral-50"}`}
+                  className={`flex items-center gap-1.5 px-4 py-2 text-[11px] rounded-lg  font-medium border hover:scale-103 hover:cursor-pointer transition-all duration-200 ease-in-out ${selectedRows.length > 0 ? "bg-red-50 border-red-100 text-red-600 hover:bg-red-100" : "bg-white border-neutral-200 text-neutral-500 hover:bg-neutral-50"}`}
                 >
                   <Trash2 size={12} />{" "}
                   {selectedRows.length > 0
@@ -187,14 +199,14 @@ export default function Dashboard() {
 
                 <button
                   onClick={() => setImportOpen(true)}
-                  className="flex items-center gap-1.5 px-4 py-2 bg-neutral-800 text-white text-[11px] rounded-lg hover:bg-neutral-700 transition-colors hover:cursor-pointer font-medium"
+                  className="flex items-center gap-1.5 px-4 py-2 bg-neutral-800 text-white text-[11px] rounded-lg hover:bg-neutral-700 hover:scale-103 hover:cursor-pointer transition-all duration-200 ease-in-out font-medium"
                 >
                   <Upload size={12} /> {formatText("Import")}
                 </button>
 
                 <button
                   onClick={() => setExportOpen(true)}
-                  className="flex items-center gap-1.5 px-4 py-2 bg-neutral-800 text-white text-[11px] rounded-lg hover:bg-neutral-700 transition-colors hover:cursor-pointer font-medium"
+                  className="flex items-center gap-1.5 px-4 py-2 bg-neutral-800 text-white text-[11px] rounded-lg hover:bg-neutral-700 hover:scale-103 hover:cursor-pointer transition-all duration-200 ease-in-out font-medium"
                 >
                   <Download size={12} /> {formatText("Export")}
                 </button>
@@ -213,12 +225,12 @@ export default function Dashboard() {
                     tab === "inventory" ? (
                       <InventoryTable
                         data={inventoryData as InventoryRow[]}
-                        onSelectionChange={setSelectedRows}
+                        onSelectionChange={handleSelectionChange}
                       />
                     ) : (
                       <LoansTable
                         data={processedLoans}
-                        onSelectionChange={setSelectedRows}
+                        onSelectionChange={handleSelectionChange}
                       />
                     )
                   ) : (
@@ -271,18 +283,7 @@ export default function Dashboard() {
                   {formatText("Recent activity")}
                 </h3>
               </div>
-              <ActivityFeed
-                items={unifiedActivity}
-                getIndicatorColor={getIndicatorColor}
-              />
-            </div>
-            <div className="h-fit border border-neutral-100 rounded-2xl bg-white p-4 shrink-0">
-              <div className="flex items-center gap-2 mb-3">
-                <TrendingUp size={15} className="text-neutral-400" />
-                <h3 className="text-[10px] font-bold uppercase tracking-widest text-neutral-800">
-                  {formatText("Quick Stats")}
-                </h3>
-              </div>
+              <ActivityFeed />
             </div>
           </div>
         </div>

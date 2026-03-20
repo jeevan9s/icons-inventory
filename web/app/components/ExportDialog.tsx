@@ -29,7 +29,7 @@ import {
   Plus
 } from "lucide-react";
 import { format, isAfter } from "date-fns";
-import { useDatabase } from "@/services/lib/hooks/useDatabase";
+import { useExport } from "@/services/lib/hooks/useDatabase";
 import { TableName } from "@/services/lib/hooks/types";
 import { createDateTime } from "@/services/lib/helpers";
 import { TableType } from "../frontendTypes";
@@ -74,7 +74,6 @@ export default function ExportDialog({
     signeeName: ""
   });
 
-  const { useExport } = useDatabase(); 
   const { mutate: exports, isPending } = useExport(tableType as TableName);
 
   const handleExport = () => {

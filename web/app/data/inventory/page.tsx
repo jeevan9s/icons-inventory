@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Layout from "@/app/components/Layout";
 import InventoryTable from "@/app/components/InventoryTable";
-import { useDatabase } from "@/services/lib/hooks/useDatabase";
+import { useGetRows } from "@/services/lib/hooks/useDatabase";
 import { Plus, Download } from "lucide-react";
 import { useDialog } from "@/services/lib/hooks/useDialog";
 import AddDialog from "@/app/components/AddDialog";
@@ -11,7 +11,6 @@ import ExportDialog from "@/app/components/ExportDialog";
 import { InventoryRow, LoanRow } from "@/services/lib/types";
 
 export default function InventoryPage() {
-  const { useGetRows } = useDatabase();
   const { data: inventoryData = [] } = useGetRows("Stock");
   
   

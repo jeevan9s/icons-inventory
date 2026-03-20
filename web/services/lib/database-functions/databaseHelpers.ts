@@ -98,7 +98,10 @@ export async function getDataFiltered<table_name extends keyof Database['public'
         .from(table)
         .select("*")
         .gt(filterBy as string, filterTerm as any);
-        if (error) console.error(error);
+        if (error) {
+          console.error("Database error:", error);
+          return [];
+        }
         return data || [];
     } else if (qualifier === "lt") {
         const { data, error } = await supabase
