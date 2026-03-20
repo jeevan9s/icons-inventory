@@ -1,6 +1,6 @@
 // type definitions for tools used in frontend
 import { ChevronDown, ChevronUp, ArrowUpDown } from "lucide-react";
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 
 // implement getStatus in lib/hooks
 const statusColors: Record<string, string> = {
@@ -9,6 +9,7 @@ const statusColors: Record<string, string> = {
   'Out of Stock': 'bg-red-100 text-red-700',
   'Returned':     'bg-green-100 text-green-700',
   'Checked Out':  'bg-blue-100 text-blue-700',
+  'Overdue' : 'bg-red-100 text-red-700'
 }
 
 export const StatusBadge = ({ status }: { status: string }) => (
@@ -53,3 +54,5 @@ export default function Modal({ children, onClose }: { children: React.ReactNode
     </motion.div>
   )
 }
+
+export type TableType = "Stock" | "Loans";

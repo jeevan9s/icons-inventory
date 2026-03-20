@@ -30,18 +30,20 @@ export default function InventoryPage() {
           </div>
           
           <div className="flex items-center gap-2">
-            <button 
-              onClick={() => setExportOpen(true)}
-              className="flex items-center gap-1.5 px-4 py-2 bg-white border border-neutral-200 text-neutral-700 text-[11px] rounded-lg hover:bg-neutral-50 transition-colors font-medium shadow-sm"
-            >
-              <Download size={12} /> Export
-            </button>
-            <button 
+                        <button 
               onClick={AddOpen}
-              className="flex items-center gap-1.5 px-4 py-2 bg-neutral-900 text-white text-[11px] rounded-lg hover:bg-neutral-800 transition-all font-medium shadow-sm active:scale-95"
+              className="flex items-center gap-1.5 px-4 py-2 bg-neutral-900 text-white text-[11px] rounded-lg hover:bg-neutral-800 transition-all font-medium shadow-sm active:scale-95 hover:cursor-pointer"
             >
               <Plus size={12} /> Add Item
             </button>
+            
+            <button 
+              onClick={() => setExportOpen(true)}
+              className="flex items-center gap-1.5 px-4 py-2 bg-white border border-neutral-200 text-neutral-700 text-[11px] rounded-lg hover:bg-neutral-50 transition-colors hover:cursor-pointer font-medium shadow-sm"
+            >
+              <Download size={12} /> Export
+            </button>
+
           </div>
         </div>
 

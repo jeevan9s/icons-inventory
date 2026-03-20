@@ -32,9 +32,9 @@ import { format, isAfter } from "date-fns";
 import { useDatabase } from "@/services/lib/hooks/useDatabase";
 import { TableName } from "@/services/lib/hooks/types";
 import { createDateTime } from "@/services/lib/helpers";
+import { TableType } from "../frontendTypes";
 
 type ExportOptions = "all" | "selected" | "filtered";
-type TableType = "Stock" | "Loans";
 
 type Props = {
   isOpen: boolean;
@@ -321,11 +321,11 @@ export default function ExportDialog({
         )}
 
         <div className="flex gap-3 pt-2">
-          <button onClick={onClose} className="flex-1 py-3 text-sm font-mp font-medium text-neutral-500 hover:bg-neutral-50 rounded-xl transition-colors">Cancel</button>
+          <button onClick={onClose} className="flex-1 py-3 text-sm font-mp font-medium text-neutral-500 hover:bg-neutral-100 rounded-xl hover:scale-105 hover:cursor-pointer transition-colors">Cancel</button>
           <button
             onClick={handleExport}
             disabled={isPending}
-            className="flex-1 flex items-center justify-center gap-2 py-3 bg-neutral-900 text-white font-mp font-medium rounded-xl hover:bg-neutral-800 active:scale-95 transition-all shadow-md disabled:opacity-50"
+            className="flex-1 flex items-center justify-center gap-2 py-3 bg-neutral-900 text-white font-mp font-medium rounded-xl hover:bg-neutral-600 hover:scale-105 hover:cursor-pointer active:scale-95 transition-all shadow-md disabled:opacity-50"
           >
             <Download size={16} /> {isPending ? "Exporting..." : `Export ${tableType === "Stock" ? "Inventory" : "Loans"}`}
           </button>

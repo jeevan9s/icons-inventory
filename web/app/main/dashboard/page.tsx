@@ -14,6 +14,8 @@ import {
   Table as TableIcon,
   LayoutGrid,
   Trash2,
+  Import,
+  Upload,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import InventoryTable from "@/app/components/InventoryTable";
@@ -34,6 +36,7 @@ import {
   getUnifiedActivity,
 } from "@/services/lib/helpers";
 import { InventoryRow, LoanRow } from "@/services/lib/types";
+import ImportDialog from "@/app/components/ImportDialog";
 
 type Tab = "inventory" | "loans";
 type ViewMode = "table" | "grid";
@@ -46,6 +49,7 @@ export default function Dashboard() {
   const [tab, setTab] = useState<Tab>("loans");
   const [viewMode, setViewMode] = useState<ViewMode>("table");
   const [isExportOpen, setExportOpen] = useState(false);
+  const [isImportOpen, setImportOpen] = useState(false);
   const [selectedRows, setSelectedRows] = useState<(InventoryRow | LoanRow)[]>(
     [],
   );
@@ -163,28 +167,36 @@ export default function Dashboard() {
               </div>
               <div className="flex flex-row gap-2">
                 <button
+                  onClick={AddOpen}
+                  className="flex items-center gap-1.5 px-4 py-2 bg-neutral-800 text-white text-[11px] rounded-lg hover:bg-neutral-700 hover:cursor-pointer transition-colors font-medium"
+                >
+                  <Plus size={12} />{" "}
+                  {tab === "inventory"
+                    ? formatText("Add Item")
+                    : formatText("Log Rental")}
+                </button>
+                <button
                   onClick={handleClear}
-                  className={`flex items-center gap-1.5 px-4 py-2 text-[11px] rounded-lg transition-all font-medium border ${selectedRows.length > 0 ? "bg-red-50 border-red-100 text-red-600 hover:bg-red-100" : "bg-white border-neutral-200 text-neutral-500 hover:bg-neutral-50"}`}
+                  className={`flex items-center gap-1.5 px-4 py-2 text-[11px] rounded-lg transition-all font-medium border hover:cursor-pointer ${selectedRows.length > 0 ? "bg-red-50 border-red-100 text-red-600 hover:bg-red-100" : "bg-white border-neutral-200 text-neutral-500 hover:bg-neutral-50"}`}
                 >
                   <Trash2 size={12} />{" "}
                   {selectedRows.length > 0
                     ? `Clear (${selectedRows.length})`
                     : "Clear All"}
                 </button>
+
+                <button
+                  onClick={() => setImportOpen(true)}
+                  className="flex items-center gap-1.5 px-4 py-2 bg-neutral-800 text-white text-[11px] rounded-lg hover:bg-neutral-700 transition-colors hover:cursor-pointer font-medium"
+                >
+                  <Upload size={12} /> {formatText("Import")}
+                </button>
+
                 <button
                   onClick={() => setExportOpen(true)}
-                  className="flex items-center gap-1.5 px-4 py-2 bg-neutral-800 text-white text-[11px] rounded-lg hover:bg-neutral-700 transition-colors font-medium"
+                  className="flex items-center gap-1.5 px-4 py-2 bg-neutral-800 text-white text-[11px] rounded-lg hover:bg-neutral-700 transition-colors hover:cursor-pointer font-medium"
                 >
                   <Download size={12} /> {formatText("Export")}
-                </button>
-                <button
-                  onClick={AddOpen}
-                  className="flex items-center gap-1.5 px-4 py-2 bg-neutral-800 text-white text-[11px] rounded-lg hover:bg-neutral-700 transition-colors font-medium"
-                >
-                  <Plus size={12} />{" "}
-                  {tab === "inventory"
-                    ? formatText("Add Item")
-                    : formatText("Log Rental")}
                 </button>
               </div>
             </div>
@@ -276,7 +288,7 @@ export default function Dashboard() {
         </div>
 
         <ExportDialog
-          key={tab}
+          key={`export-${tab}`}
           isOpen={isExportOpen}
           onClose={() => setExportOpen(false)}
           initialTableType={tab === "inventory" ? "Stock" : "Loans"}
@@ -284,7 +296,14 @@ export default function Dashboard() {
           hasSelectedRows={selectedRows.length > 0}
           selectedRows={selectedRows}
         />
-        <Add />
+
+        <ImportDialog
+          key={tab}
+          isOpen={isImportOpen}
+          onClose={() => setImportOpen(false)}
+          initialTableType={tab === "inventory" ? "Stock" : "Loans"}
+          fixedTableType={true}
+        />
       </div>
     </Layout>
   );
