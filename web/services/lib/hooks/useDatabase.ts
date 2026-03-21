@@ -255,12 +255,12 @@ export const useImport = <T extends TableName>(table: T) => {
         escapeChar: '"',
         skipEmptyLines: 'greedy',
         strictHeader: false,
-      });
+      } as any);
 
-      const criticalErrors = parsed.errors.filter((err: any) => 
+      const criticalErrors = parsed.errors.filter((err: any) =>
         err.code !== 'TooManyFields' && err.code !== 'TooFewFields'
       );
-      
+
       if (criticalErrors.length > 0) {
         throw new Error(`CSV parse error: ${criticalErrors[0].message}`);
       }
@@ -268,20 +268,22 @@ export const useImport = <T extends TableName>(table: T) => {
       const filteredRows = parsed.data.map((row: any) => {
         const cleaned: any = {};
         Object.entries(row).forEach(([key, value]) => {
-          if (key && 
-              !key.startsWith('__') && 
-              key.trim() && 
-              value !== null && 
-              value !== undefined && 
-              value !== '') {
+          if (key &&
+            !key.startsWith('__') &&
+            key.trim() &&
+            value !== null &&
+            value !== undefined &&
+            value !== '') {
             cleaned[key] = value;
           }
         });
         return cleaned;
       });
 
+      const originalRows = filteredRows.map((r: any) => ({ ...r }));
+
       const cleanedRows = await Promise.all(
-        filteredRows.map((row, idx) => {
+        filteredRows.map((row: any) => {
           try {
             return deEnrichRow(table, row);
           } catch (err) {
@@ -294,12 +296,42 @@ export const useImport = <T extends TableName>(table: T) => {
       const cleanedFile = new File([cleanedCsvString], file.name, { type: "text/csv" });
 
       const result = await importCSV(table, cleanedFile);
-      
       if (!result) throw new Error(`Import failed for ${String(table)}`);
+
+      if (table === "Loans") {
+        const insertedLoans = result as any[];
+
+        for (let i = 0; i < insertedLoans.length; i++) {
+          const loan = insertedLoans[i];
+          const original = originalRows[i];
+          if (!original.item_name) continue;
+
+          const stockMatch = await getDataFiltered("Stock", "name", "ilike", `%${original.item_name.trim()}%`);
+          if (!stockMatch || stockMatch.length === 0) continue;
+
+          const stock = stockMatch[0];
+
+          await insertEntry("Loan Items", {
+            loan_id: loan.id,
+            item_id: stock.id,
+            item_quantity: 1,
+          });
+
+          const isActive = !original.time_in || original.time_in === "";
+          if (isActive) {
+            await updateEntry("Stock", stock.id, {
+              net_stock: Number(stock.net_stock) - 1,
+            });
+          }
+        }
+      }
+
       return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [table] });
+      queryClient.invalidateQueries({ queryKey: ["Loan Items"] });
+      queryClient.invalidateQueries({ queryKey: ["Stock"] });
     },
     onError: (error: Error) => {
       console.error(`Import failed for ${String(table)}:`, error.message);

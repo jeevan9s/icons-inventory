@@ -23,10 +23,10 @@ export default function ActivityFeed() {
 
           <div className="flex flex-col min-w-0">
             <p className="text-[11px] text-neutral-600 leading-relaxed">
-              <span className="font-semibold text-neutral-900">{item.display_name}</span>
-              {" "}{item.action}{" "}
-              <span className="font-semibold text-neutral-900">{item.item_name}</span>
-              {" for "}<span className="font-semibold text-neutral-900">{item.student_name}</span>
+              <span className="font-semibold text-neutral-900 text-[0.9rem]">{item.display_name}</span>
+              {" "}<span className="text-[0.9rem]">{item.action}</span>{" "}
+              <span className="font-semibold text-neutral-900 text-[0.9rem]">{item.item_name}</span>
+              {" for "}<span className="font-semibold text-neutral-900 text-[0.9rem]">{item.student_name}</span>
             </p>
             
             <div className="flex items-center gap-1.5 mt-1 text-neutral-400">

@@ -2,7 +2,7 @@
 
 import { TableType, addDialogTitles } from "../frontendTypes";
 import Modal from "./Modal";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -27,6 +27,8 @@ type Props = {
 export default function AddDialog({ isOpen, onClose, initialTableType, fixedTableType, editData }: Props) {
   const [tableType, setTableType] = useState<TableType>(initialTableType);
   const [loanItems, setLoanItems] = useState([{ name: "", quantity: 1, equipment_type: "" }]);
+  const [showDropdowns, setShowDropdowns] = useState<boolean[]>([false]);
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   const isEditMode = !!editData;
   const router = useRouter();
@@ -38,8 +40,10 @@ export default function AddDialog({ isOpen, onClose, initialTableType, fixedTabl
   const updateLoanItemRow = useUpdateRow("Loan Items");
   const queryClient = useQueryClient();
   const { data: stockRows = [] } = useGetRows("Stock");
-  const { data: profiles = [] } = useGetRows("Profiles");
-  const [customEquipmentTypes, setCustomEquipmentTypes] = useState<string[]>([]);
+
+  const customEquipmentTypes = typeof window !== "undefined"
+    ? JSON.parse(localStorage.getItem("custom_equipment_types") ?? "[]")
+    : [];
 
   const equipmentTypes = Array.from(
     new Set([
@@ -47,16 +51,6 @@ export default function AddDialog({ isOpen, onClose, initialTableType, fixedTabl
       ...customEquipmentTypes,
     ])
   ) as string[];
-
-  useEffect(() => {
-    // Load custom types from current admin user's profile settings
-    if (user?.id && profiles.length > 0) {
-      const currentProfile = profiles.find((p: any) => p.id === user.id);
-      if (currentProfile?.settings?.custom_equipment_types) {
-        setCustomEquipmentTypes(currentProfile.settings.custom_equipment_types);
-      }
-    }
-  }, [user?.id, profiles]);
 
   useEffect(() => {
     setTableType(initialTableType);
@@ -71,17 +65,27 @@ export default function AddDialog({ isOpen, onClose, initialTableType, fixedTabl
         quantity: loan.item_quantity ?? 1,
         equipment_type: loan.equipment_type ?? "",
       }]);
+      setShowDropdowns([false]);
     }
   }, [editData, isOpen, initialTableType]);
 
   useEffect(() => {
     if (!isOpen) {
       setLoanItems([{ name: "", quantity: 1, equipment_type: "" }]);
+      setShowDropdowns([false]);
     }
   }, [isOpen]);
 
-  const addRow = () => setLoanItems([...loanItems, { name: "", quantity: 1, equipment_type: "" }]);
-  const removeRow = (index: number) => setLoanItems(loanItems.filter((_, i) => i !== index));
+  const addRow = () => {
+    setLoanItems([...loanItems, { name: "", quantity: 1, equipment_type: "" }]);
+    setShowDropdowns([...showDropdowns, false]);
+  };
+
+  const removeRow = (index: number) => {
+    setLoanItems(loanItems.filter((_, i) => i !== index));
+    setShowDropdowns(showDropdowns.filter((_, i) => i !== index));
+    inputRefs.current = inputRefs.current.filter((_, i) => i !== index);
+  };
 
   const updateLoanItem = (index: number, field: "name" | "quantity" | "equipment_type", value: string | number) => {
     const newItems = [...loanItems];
@@ -227,6 +231,7 @@ export default function AddDialog({ isOpen, onClose, initialTableType, fixedTabl
           },
         });
         toast.success("Item updated");
+        await queryClient.invalidateQueries({ queryKey: ["Stock"] });
         onClose();
         router.refresh();
       } catch {
@@ -246,6 +251,7 @@ export default function AddDialog({ isOpen, onClose, initialTableType, fixedTabl
         },
       });
       toast.success("Stock added");
+      await queryClient.invalidateQueries({ queryKey: ["Stock"] });
       onClose();
       router.refresh();
     } catch (error) {
@@ -291,19 +297,18 @@ export default function AddDialog({ isOpen, onClose, initialTableType, fixedTabl
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label className="text-[10px] uppercase font-bold text-neutral-500">Student Name</Label>
-                  <Input
-                    name="student_name"
-                    placeholder="Name"
-                    defaultValue={loanEditData?.student_name ?? ""}
-                    required
-                  />
+                  <Input name="student_name" placeholder="Name" defaultValue={loanEditData?.student_name ?? ""} required />
                 </div>
                 <div className="space-y-2">
                   <Label className="text-[10px] uppercase font-bold text-neutral-500">Student Number</Label>
                   <Input
                     name="student_number"
-                    type="number"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]{8}"
+                    title="Enter an 8-digit student ID"
                     placeholder="ID"
+                    maxLength={8}
                     defaultValue={loanEditData?.student_number ?? ""}
                     required
                   />
@@ -322,14 +327,81 @@ export default function AddDialog({ isOpen, onClose, initialTableType, fixedTabl
 
                 {loanItems.map((item, index) => (
                   <div key={index} className="flex gap-2 items-end group animate-in zoom-in-95 duration-200">
-                    <div className="flex-[3] space-y-1">
+                    <div className="flex-[3] space-y-1 relative">
                       <Input
+                        ref={(el) => { inputRefs.current[index] = el; }}
                         placeholder="Item Name"
                         value={item.name}
-                        onChange={(e) => updateLoanItem(index, "name", e.target.value)}
+                        onChange={(e) => {
+                          updateLoanItem(index, "name", e.target.value);
+                          const next = [...showDropdowns];
+                          next[index] = true;
+                          setShowDropdowns(next);
+                        }}
+                        onFocus={() => {
+                          const next = [...showDropdowns];
+                          next[index] = true;
+                          setShowDropdowns(next);
+                        }}
+                        onBlur={() => {
+                          setTimeout(() => {
+                            const next = [...showDropdowns];
+                            next[index] = false;
+                            setShowDropdowns(next);
+                          }, 200);
+                        }}
                         required
                         className="bg-white"
                       />
+                      {showDropdowns[index] && (
+                        <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border border-neutral-200 rounded-xl shadow-lg max-h-40 overflow-y-auto">
+                          {(stockRows as any[])
+                            .filter((s) =>
+                              item.name.trim() === ""
+                                ? true
+                                : s.name?.toLowerCase().includes(item.name.toLowerCase())
+                            )
+                            .filter((s) =>
+                              item.equipment_type
+                                ? s.item_properties?.equipment_type === item.equipment_type
+                                : true
+                            )
+                            .slice(0, 8)
+                            .map((s) => (
+                              <div
+                                key={s.id}
+                                onMouseDown={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  const newItems = [...loanItems];
+                                  newItems[index] = {
+                                    ...newItems[index],
+                                    name: s.name,
+                                    equipment_type: s.item_properties?.equipment_type ?? "",
+                                  };
+                                  setLoanItems(newItems);
+                                  const next = [...showDropdowns];
+                                  next[index] = false;
+                                  setShowDropdowns(next);
+                                  if (inputRefs.current[index]) {
+                                    inputRefs.current[index]!.value = s.name;
+                                  }
+                                }}
+                                className="flex items-center justify-between w-full px-3 py-2 text-xs text-left hover:bg-neutral-50 transition-colors cursor-pointer"
+                              >
+                                <span className="font-medium text-neutral-700 capitalize">{s.name}</span>
+                                <span className="text-neutral-400 capitalize">{s.item_properties?.equipment_type ?? "—"}</span>
+                              </div>
+                            ))}
+                          {(stockRows as any[]).filter((s) =>
+                            item.name.trim() === ""
+                              ? true
+                              : s.name?.toLowerCase().includes(item.name.toLowerCase())
+                          ).length === 0 && (
+                            <div className="px-3 py-2 text-xs text-neutral-400">No items found</div>
+                          )}
+                        </div>
+                      )}
                     </div>
                     <div className="flex-[2] space-y-1">
                       <select
@@ -339,7 +411,9 @@ export default function AddDialog({ isOpen, onClose, initialTableType, fixedTabl
                       >
                         <option value="">All types</option>
                         {equipmentTypes.map((type) => (
-                          <option key={type} value={type} className="capitalize">{type}</option>
+                          <option key={type} value={type}>
+                            {type.charAt(0).toUpperCase() + type.slice(1)}
+                          </option>
                         ))}
                       </select>
                     </div>
@@ -354,12 +428,7 @@ export default function AddDialog({ isOpen, onClose, initialTableType, fixedTabl
                       />
                     </div>
                     {loanItems.length > 1 && !isEditMode && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        onClick={() => removeRow(index)}
-                        className="text-neutral-400 hover:text-red-500 h-10 px-2"
-                      >
+                      <Button type="button" variant="ghost" onClick={() => removeRow(index)} className="text-neutral-400 hover:text-red-500 h-10 px-2">
                         <Trash2 size={16} />
                       </Button>
                     )}
@@ -368,28 +437,17 @@ export default function AddDialog({ isOpen, onClose, initialTableType, fixedTabl
               </div>
 
               <div className="space-y-2">
-                <Label className="text-[10px] uppercase font-bold text-neutral-500">Location</Label>
-                <Input
-                  name="location"
-                  placeholder="e.g. Rm 101"
-                  defaultValue={loanEditData?.location ?? ""}
-                />
+                <Label className="text-[10px] uppercase font-bold text-neutral-500">Location (Not Required)</Label>
+                <Input name="location" placeholder="e.g. Rm 101" defaultValue={loanEditData?.location ?? ""} />
               </div>
 
               <div className="space-y-2">
                 <Label className="text-[10px] uppercase font-bold text-neutral-500">Notes</Label>
-                <Textarea
-                  name="notes"
-                  placeholder="Any additional notes..."
-                  defaultValue={loanEditData?.notes ?? ""}
-                  className="resize-none h-20"
-                />
+                <Textarea name="notes" placeholder="Any additional notes..." defaultValue={loanEditData?.notes ?? ""} className="resize-none h-20" />
               </div>
 
-              <Button type="submit" disabled={insertRow.isPending || updateLoanRow.isPending} className="w-full hover:scale-105 transition-all duration-200 shadow-lg">
-                {insertRow.isPending || updateLoanRow.isPending
-                  ? <Loader2 className="animate-spin" />
-                  : isEditMode ? "Save Changes" : "Authorize Loan"}
+              <Button type="submit" disabled={insertRow.isPending || updateLoanRow.isPending} className="w-full hover:scale-105 transition-all duration-200 hover:cursor-pointer shadow-lg">
+                {insertRow.isPending || updateLoanRow.isPending ? <Loader2 className="animate-spin" /> : isEditMode ? "Save Changes" : "Authorize Loan"}
               </Button>
             </form>
           )}
@@ -398,12 +456,7 @@ export default function AddDialog({ isOpen, onClose, initialTableType, fixedTabl
             <form onSubmit={handleStockSubmit} className="space-y-4 animate-in fade-in slide-in-from-bottom-2">
               <div className="space-y-2">
                 <Label className="text-[10px] uppercase font-bold text-neutral-500">Equipment Name</Label>
-                <Input
-                  name="name"
-                  placeholder="e.g. Sony A7III"
-                  defaultValue={stockEditData?.name ?? ""}
-                  required
-                />
+                <Input name="name" placeholder="e.g. Sony A7III" defaultValue={stockEditData?.name ?? ""} required />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -412,41 +465,29 @@ export default function AddDialog({ isOpen, onClose, initialTableType, fixedTabl
                     name="equipment_type"
                     required
                     defaultValue={stockEditData?.item_properties?.equipment_type ?? ""}
-                    className="w-full h-9 text-xs border border-neutral-200 rounded-lg px-3 bg-white text-neutral-700 font-mp focus:outline-none focus:ring-1 focus:ring-neutral-300"
+                    className="w-full h-9 text-xs border border-neutral-200 rounded-lg px-3 bg-white text-neutral-700 font-mp focus:outline-none focus:ring-1 focus:ring-neutral-300 hover:cursor-pointer transition-all"
                   >
                     <option value="" disabled>Select type...</option>
                     {equipmentTypes.map((type) => (
-                      <option key={type} value={type} className="capitalize">{type}</option>
+                      <option key={type} value={type}>
+                        {type.charAt(0).toUpperCase() + type.slice(1)}
+                      </option>
                     ))}
                   </select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="total_stock" className="text-[10px] uppercase font-bold text-neutral-500">Total Quantity</Label>
-                  <Input
-                    id="total_stock"
-                    name="total_stock"
-                    type="number"
-                    min="1"
-                    defaultValue={stockEditData?.total_stock ?? ""}
-                  />
+                  <Label htmlFor="total_stock" className="text-[10px]  uppercase font-bold text-neutral-500">Total Quantity</Label>
+                  <Input id="total_stock" name="total_stock" type="number" min="1" defaultValue={stockEditData?.total_stock ?? ""} />
                 </div>
               </div>
               {isEditMode && (
                 <div className="space-y-2">
                   <Label className="text-[10px] uppercase font-bold text-neutral-500">Available</Label>
-                  <Input
-                    name="net_stock"
-                    type="number"
-                    min="0"
-                    defaultValue={stockEditData?.net_stock ?? ""}
-                    required
-                  />
+                  <Input name="net_stock" type="number" min="0" defaultValue={stockEditData?.net_stock ?? ""} required />
                 </div>
               )}
               <Button type="submit" disabled={insertRow.isPending || updateStockRow.isPending} className="w-full hover:scale-105 transition-all hover:cursor-pointer duration-200 bg-neutral-900">
-                {insertRow.isPending || updateStockRow.isPending
-                  ? <Loader2 className="animate-spin" />
-                  : isEditMode ? "Save Changes" : "Add to Inventory"}
+                {insertRow.isPending || updateStockRow.isPending ? <Loader2 className="animate-spin" /> : isEditMode ? "Save Changes" : "Add to Inventory"}
               </Button>
             </form>
           )}

@@ -170,7 +170,7 @@ export const getUnifiedActivity = (loans: LoanRow[]): ActivityItem[] => {
       item_name: formatCapitalized(l.item_name || "Unknown Item"),
       student_name: formatCapitalized(l.student_name || "Unknown Student"),
       display_name: formatCapitalized(l.display_name || "Staff"),
-      action: "logged loan of",
+      action: "logged",
     });
 
     if (l.time_in) {
@@ -184,7 +184,7 @@ export const getUnifiedActivity = (loans: LoanRow[]): ActivityItem[] => {
         item_name: formatCapitalized(l.item_name || "Unknown Item"),
         student_name: formatCapitalized(l.student_name || "Unknown Student"),
         display_name: formatCapitalized(l.display_name || "Staff"),
-        action: "completed loan of",
+        action: "completed",
       });
     }
   });
