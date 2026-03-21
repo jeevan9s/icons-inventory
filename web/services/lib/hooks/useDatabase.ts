@@ -11,6 +11,8 @@ import {
 } from "../database-functions/databaseHelpers";
 import { getLoanStatus, getStockStatus } from "./helpers";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { deEnrichRow } from "../helpers";
+import Papa from "papaparse"
 
 // query -> read/fetch data
 // mutate -> update, create, and delete data
@@ -238,26 +240,76 @@ export const useRowInsert = <
 };
 
 // import a CSV to populate a table
-export const useImport = <T extends keyof Database["public"]["Tables"]>(
-  table: T,
-) => {
+export const useImport = <T extends TableName>(table: T) => {
   const queryClient = useQueryClient();
+
   const mutation = useMutation({
     mutationFn: async (file: File) => {
-      const result = await importCSV(table, file);
+      const text = await file.text();
+
+      const parsed = Papa.parse(text, {
+        header: true,
+        skipEmptyLines: true,
+        dynamicTyping: false,
+        quoteChar: '"',
+        escapeChar: '"',
+        skipEmptyLines: 'greedy',
+        strictHeader: false,
+      });
+
+      const criticalErrors = parsed.errors.filter((err: any) => 
+        err.code !== 'TooManyFields' && err.code !== 'TooFewFields'
+      );
+      
+      if (criticalErrors.length > 0) {
+        throw new Error(`CSV parse error: ${criticalErrors[0].message}`);
+      }
+
+      const filteredRows = parsed.data.map((row: any) => {
+        const cleaned: any = {};
+        Object.entries(row).forEach(([key, value]) => {
+          if (key && 
+              !key.startsWith('__') && 
+              key.trim() && 
+              value !== null && 
+              value !== undefined && 
+              value !== '') {
+            cleaned[key] = value;
+          }
+        });
+        return cleaned;
+      });
+
+      const cleanedRows = await Promise.all(
+        filteredRows.map((row, idx) => {
+          try {
+            return deEnrichRow(table, row);
+          } catch (err) {
+            throw err;
+          }
+        })
+      );
+
+      const cleanedCsvString = Papa.unparse(cleanedRows);
+      const cleanedFile = new File([cleanedCsvString], file.name, { type: "text/csv" });
+
+      const result = await importCSV(table, cleanedFile);
+      
       if (!result) throw new Error(`Import failed for ${String(table)}`);
       return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [table] });
     },
+    onError: (error: Error) => {
+      console.error(`Import failed for ${String(table)}:`, error.message);
+    },
   });
 
-  // open the file picker
   const openPicker = () => {
     const input = document.createElement("input");
     input.type = "file";
-    input.accept = ".csv"; // force csv input
+    input.accept = ".csv";
     input.onchange = (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (file) mutation.mutate(file);
@@ -265,10 +317,7 @@ export const useImport = <T extends keyof Database["public"]["Tables"]>(
     input.click();
   };
 
-  return {
-    ...mutation,
-    openPicker,
-  };
+  return { ...mutation, openPicker };
 };
 
 // hook for updating entries, stock - rows
@@ -301,6 +350,114 @@ export const useUpdateRow = <T extends keyof Database["public"]["Tables"]>(
     },
     onError: (error: Error) => {
       console.error(error);
+    },
+  });
+};
+
+export const useReturnToggle = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (loan: { id: number; time_in: string | null }) => {
+      const isReturning = !loan.time_in; 
+
+      await updateEntry("Loans", loan.id, {
+        time_in: isReturning ? new Date().toISOString() : null,
+      });
+
+      const loanItems = await getDataFiltered("Loan Items", "loan_id", "e", loan.id);
+      if (!loanItems || loanItems.length === 0) return;
+
+      for (const li of loanItems as any[]) {
+        const stock = await getDataFiltered("Stock", "id", "e", li.item_id);
+        if (!stock || stock.length === 0) continue;
+
+        const current = stock[0];
+        const qty = li.item_quantity ?? 1;
+
+        await updateEntry("Stock", current.id, {
+          net_stock: isReturning
+            ? Number(current.net_stock) + qty   // returning: add back
+            : Number(current.net_stock) - qty,  // un-returning: subtract again
+        });
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["Loans"] });
+      queryClient.invalidateQueries({ queryKey: ["Stock"] });
+      queryClient.invalidateQueries({ queryKey: ["Loan Items"] });
+    },
+    onError: (error: Error) => {
+      console.error("Return toggle failed:", error.message);
+    },
+  });
+};
+
+export const useDeleteLoan = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (loanId: number) => {
+      const loanItems = await getDataFiltered("Loan Items", "loan_id", "e", loanId);
+
+      if (loanItems && loanItems.length > 0) {
+        for (const li of loanItems as any[]) {
+          const stock = await getDataFiltered("Stock", "id", "e", li.item_id);
+          if (!stock || stock.length === 0) continue;
+
+          const current = stock[0];
+          const qty = li.item_quantity ?? 1;
+          const loan = await getDataFiltered("Loans", "id", "e", loanId);
+          const isActive = !loan?.[0]?.time_in;
+
+          if (isActive) {
+            await updateEntry("Stock", current.id, {
+              net_stock: Number(current.net_stock) + qty,
+            });
+          }
+        }
+      }
+
+      await deleteById("Loans", loanId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["Loans"] });
+      queryClient.invalidateQueries({ queryKey: ["Stock"] });
+      queryClient.invalidateQueries({ queryKey: ["Loan Items"] });
+    },
+    onError: (error: Error) => {
+      console.error("Delete loan failed:", error.message);
+    },
+  });
+};
+
+export const useUpdateLoanQuantity = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ loanItemId, newQuantity, oldQuantity, itemId }: {
+      loanItemId: number;
+      newQuantity: number;
+      oldQuantity: number;
+      itemId: number;
+    }) => {
+      await updateEntry("Loan Items", loanItemId, { item_quantity: newQuantity });
+
+      const stock = await getDataFiltered("Stock", "id", "e", itemId);
+      if (!stock || stock.length === 0) throw new Error("Stock item not found");
+
+      const diff = newQuantity - oldQuantity;
+      await updateEntry("Stock", stock[0].id, {
+        net_stock: Number(stock[0].net_stock) - diff,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["Loans"] });
+      queryClient.invalidateQueries({ queryKey: ["Loan Items"] });
+      queryClient.invalidateQueries({ queryKey: ["Stock"] });
+    },
+    onError: (error: Error) => {
+      console.error("Quantity update failed:", error.message);
     },
   });
 };

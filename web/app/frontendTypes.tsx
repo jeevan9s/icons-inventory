@@ -12,6 +12,12 @@ const statusColors: Record<string, string> = {
   'Overdue' : 'bg-red-100 text-red-700'
 }
 
+export const addDialogTitles = {
+  "Stock" : "Add Item", 
+  "Loans" : "Log Loan", 
+  "Profiles" : "Add User"
+}
+
 export const StatusBadge = ({ status }: { status: string }) => (
   <span className={`text-xs font-mp px-3 py-1.5 rounded-full font-medium whitespace-nowrap ${statusColors[status] ?? 'bg-neutral-100 text-neutral-600'}`}>
     {status}
@@ -55,4 +61,4 @@ export default function Modal({ children, onClose }: { children: React.ReactNode
   )
 }
 
-export type TableType = "Stock" | "Loans";
+export type TableType = "Stock" | "Loans" | "Profiles";

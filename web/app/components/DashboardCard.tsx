@@ -1,4 +1,5 @@
 import { formatCapitalized } from "@/services/lib/helpers";
+import { InventoryRow, LoanRow } from "@/services/lib/types"; 
 
 interface DashboardCardProps {
   title: string;
@@ -8,8 +9,9 @@ interface DashboardCardProps {
   location?: string;
   studentName?: string;
   onClick?: () => void;
+  rowData?: InventoryRow | LoanRow;
+  
 }
-
 export default function DashboardCard({ 
   title, 
   subtitle, 

@@ -85,7 +85,7 @@ export async function getData<table_name extends keyof Database['public']['Table
 
 //  Gets data entries from a specified table where their column 'searchBy' has the value of
 //  qualifier.
-export async function getDataFiltered<table_name extends keyof Database['public']['Tables'],column extends Database['public']['Tables'][table_name]['Row']> (table: table_name, filterBy: keyof column, qualifier: "e" | "gt" | "lt" | "gte" | "lte", filterTerm: column[keyof column]) {
+export async function getDataFiltered<table_name extends keyof Database['public']['Tables'],column extends Database['public']['Tables'][table_name]['Row']> (table: table_name, filterBy: keyof column, qualifier: "e" | "gt" | "lt" | "gte" | "lte" | "ilike", filterTerm: column[keyof column]) {
     if (qualifier === "e") {
         const { data, error } = await supabase
         .from(table)
@@ -98,10 +98,7 @@ export async function getDataFiltered<table_name extends keyof Database['public'
         .from(table)
         .select("*")
         .gt(filterBy as string, filterTerm as any);
-        if (error) {
-          console.error("Database error:", error);
-          return [];
-        }
+        if (error) console.error(error);
         return data || [];
     } else if (qualifier === "lt") {
         const { data, error } = await supabase
@@ -122,6 +119,14 @@ export async function getDataFiltered<table_name extends keyof Database['public'
         .from(table)
         .select("*")
         .lte(filterBy as string, filterTerm as any);
+        if (error) console.error(error);
+        return data || [];
+    }
+    else if (qualifier === "ilike") {
+        const { data, error } = await supabase
+        .from(table)
+        .select("*")
+        .ilike(filterBy as string, filterTerm as any);
         if (error) console.error(error);
         return data || [];
     }

@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   PlusCircle,
-  Search,
   Download,
   Settings,
   LogOut,
@@ -15,13 +14,12 @@ import {
   ChevronsLeft,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useAuth } from "@/services/lib/hooks/useAuth";
+import { useUser } from "@/services/lib/hooks/useAuth";
 import { useDialog } from "@/services/lib/hooks/useDialog";
 import SignOutDialog from "./SignOutDialog";
 import SettingsDialog from "./SettingsDialog";
 import Link from "next/link";
 import AddDialog from "./AddDialog";
-import SearchDialog from "./SearchDialog";
 import ExportDialog from "./ExportDialog";
 
 type sbProps = {
@@ -36,7 +34,6 @@ type sbProps = {
 const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/main/dashboard" },
   { icon: PlusCircle, label: "Add" },
-  { icon: Search, label: "Search" },
   { icon: Download, label: "Export" },
 ];
 
@@ -68,7 +65,6 @@ export default function Sidebar({
 
   const { Dialog: SignOut, open: openSignOut } = useDialog(SignOutDialog);
   const { Dialog: SettingsD, open: openSettings } = useDialog(SettingsDialog);
-  const { Dialog: SearchD, open: openSearch } = useDialog(SearchDialog);
   const { Dialog: Add, open: openAdd } = useDialog(AddDialog);
   const { Dialog: Export, open: openExport } = useDialog(ExportDialog);
 
@@ -78,7 +74,6 @@ export default function Sidebar({
   };
 
   const menuActions: Record<string, () => void> = {
-    "Search": openSearch,
     "Add": openAdd,
     "Export": openExport
   };
@@ -87,7 +82,7 @@ export default function Sidebar({
     onWidthChange?.(DEFAULT_WIDTH);
   }, [onWidthChange]);
 
-  const { user } = useAuth();
+  const { user } = useUser();
 
   const startResize = useCallback(
     (e: React.MouseEvent) => {
@@ -267,7 +262,6 @@ export default function Sidebar({
 
       <SignOut />
       <SettingsD />
-      <SearchD />
       <Add />
       <Export
         initialTableType={"loans"}

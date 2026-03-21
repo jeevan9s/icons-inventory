@@ -21,8 +21,11 @@ import LoansTable from "@/app/components/LoansTable";
 import StatCard from "@/app/components/StatCard";
 import DashboardCard from "@/app/components/DashboardCard";
 import ActivityFeed from "@/app/components/ActivityFeed";
-import { useGetRows, useDeleteRow } from "@/services/lib/hooks/useDatabase";
-import { useDialog } from "@/services/lib/hooks/useDialog";
+import {
+  useGetRows,
+  useDeleteRow,
+  useDeleteLoan,
+} from "@/services/lib/hooks/useDatabase";
 import ExportDialog from "@/app/components/ExportDialog";
 import AddDialog from "@/app/components/AddDialog";
 import { getLoanStatus, getStockStatus } from "@/services/lib/hooks/helpers";
@@ -40,13 +43,18 @@ type ViewMode = "table" | "grid";
 
 export default function Dashboard() {
   const deleteStock = useDeleteRow("Stock");
-  const deleteLoans = useDeleteRow("Loans");
+  const deleteLoans = useDeleteLoan();
 
   const [tab, setTab] = useState<Tab>("loans");
   const [viewMode, setViewMode] = useState<ViewMode>("table");
   const [isExportOpen, setExportOpen] = useState(false);
   const [isImportOpen, setImportOpen] = useState(false);
-  const [selectedRows, setSelectedRows] = useState<(InventoryRow | LoanRow)[]>([]);
+  const [isAddOpen, setAddOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editData, setEditData] = useState<InventoryRow | LoanRow | null>(null);
+  const [selectedRows, setSelectedRows] = useState<(InventoryRow | LoanRow)[]>(
+    [],
+  );
   const [processedLoans, setProcessedLoans] = useState<LoanRow[]>([]);
 
   const { data: inventoryData = [] } = useGetRows("Stock");
@@ -58,9 +66,7 @@ export default function Dashboard() {
   const handleClear = async () => {
     const isInventory = tab === "inventory";
     const mutation = isInventory ? deleteStock : deleteLoans;
-    const currentData = isInventory
-      ? typedInventoryData
-      : processedLoans;
+    const currentData = isInventory ? typedInventoryData : processedLoans;
     const targets = selectedRows.length > 0 ? selectedRows : currentData;
 
     if (targets.length === 0) return;
@@ -76,19 +82,22 @@ export default function Dashboard() {
     }
   };
 
-const rawLoansRef = useRef<LoanRow[]>([]);
+  const rawLoansRef = useRef<LoanRow[]>([]);
 
   useEffect(() => {
-    if (JSON.stringify(rawLoansRef.current) === JSON.stringify(typedLoansData)) return;
+    if (JSON.stringify(rawLoansRef.current) === JSON.stringify(typedLoansData))
+      return;
     rawLoansRef.current = typedLoansData;
 
     let isMounted = true;
-    
+
     if (typedLoansData.length === 0) {
       setTimeout(() => {
         if (isMounted) setProcessedLoans([]);
       }, 0);
-      return () => { isMounted = false; };
+      return () => {
+        isMounted = false;
+      };
     }
 
     enrichData(typedLoansData, loanFetcher).then((newData) => {
@@ -96,15 +105,20 @@ const rawLoansRef = useRef<LoanRow[]>([]);
       setProcessedLoans(newData as LoanRow[]);
     });
 
-    return () => { isMounted = false; };
+    return () => {
+      isMounted = false;
+    };
   }, [typedLoansData]);
 
-  const handleSelectionChange = useCallback((rows: (InventoryRow | LoanRow)[]) => {
-    setSelectedRows((prev) => {
-      if (JSON.stringify(prev) === JSON.stringify(rows)) return prev;
-      return rows;
-    });
-  }, []);
+  const handleSelectionChange = useCallback(
+    (rows: (InventoryRow | LoanRow)[]) => {
+      setSelectedRows((prev) => {
+        if (JSON.stringify(prev) === JSON.stringify(rows)) return prev;
+        return rows;
+      });
+    },
+    [],
+  );
 
   const activeLoans = processedLoans.filter((l) =>
     ["Active", "Overdue"].includes(getLoanStatus(l)),
@@ -115,8 +129,6 @@ const rawLoansRef = useRef<LoanRow[]>([]);
   const lowStock = typedInventoryData.filter((i) =>
     ["Low Stock", "Out of Stock"].includes(getStockStatus(i)),
   ).length;
-
-  const { open: AddOpen } = useDialog(AddDialog);
 
   return (
     <Layout>
@@ -179,31 +191,29 @@ const rawLoansRef = useRef<LoanRow[]>([]);
               </div>
               <div className="flex flex-row gap-2">
                 <button
-                  onClick={AddOpen}
+                  onClick={() => setAddOpen(true)}
                   className="flex items-center gap-1.5 px-4 py-2 bg-neutral-800 text-white text-[11px] rounded-lg hover:bg-neutral-700 hover:scale-103 hover:cursor-pointer transition-all duration-200 ease-in-out font-medium"
                 >
-                  <Plus size={12} />{" "}
+                  <Plus size={12} />
                   {tab === "inventory"
                     ? formatText("Add Item")
-                    : formatText("Log Rental")}
+                    : formatText("Log Loan")}
                 </button>
                 <button
                   onClick={handleClear}
-                  className={`flex items-center gap-1.5 px-4 py-2 text-[11px] rounded-lg  font-medium border hover:scale-103 hover:cursor-pointer transition-all duration-200 ease-in-out ${selectedRows.length > 0 ? "bg-red-50 border-red-100 text-red-600 hover:bg-red-100" : "bg-white border-neutral-200 text-neutral-500 hover:bg-neutral-50"}`}
+                  className={`flex items-center gap-1.5 px-4 py-2 text-[11px] rounded-lg font-medium border hover:scale-103 hover:cursor-pointer transition-all duration-200 ease-in-out ${selectedRows.length > 0 ? "bg-red-50 border-red-100 text-red-600 hover:bg-red-100" : "bg-white border-neutral-200 text-neutral-500 hover:bg-neutral-50"}`}
                 >
-                  <Trash2 size={12} />{" "}
+                  <Trash2 size={12} />
                   {selectedRows.length > 0
                     ? `Clear (${selectedRows.length})`
                     : "Clear All"}
                 </button>
-
                 <button
                   onClick={() => setImportOpen(true)}
                   className="flex items-center gap-1.5 px-4 py-2 bg-neutral-800 text-white text-[11px] rounded-lg hover:bg-neutral-700 hover:scale-103 hover:cursor-pointer transition-all duration-200 ease-in-out font-medium"
                 >
                   <Upload size={12} /> {formatText("Import")}
                 </button>
-
                 <button
                   onClick={() => setExportOpen(true)}
                   className="flex items-center gap-1.5 px-4 py-2 bg-neutral-800 text-white text-[11px] rounded-lg hover:bg-neutral-700 hover:scale-103 hover:cursor-pointer transition-all duration-200 ease-in-out font-medium"
@@ -224,7 +234,7 @@ const rawLoansRef = useRef<LoanRow[]>([]);
                   {viewMode === "table" ? (
                     tab === "inventory" ? (
                       <InventoryTable
-                        data={inventoryData as InventoryRow[]}
+                        data={typedInventoryData}
                         onSelectionChange={handleSelectionChange}
                       />
                     ) : (
@@ -236,7 +246,7 @@ const rawLoansRef = useRef<LoanRow[]>([]);
                   ) : (
                     <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 2xl:grid-cols-7 gap-2 p-3">
                       {(tab === "inventory"
-                        ? (inventoryData as InventoryRow[])
+                        ? typedInventoryData
                         : processedLoans
                       ).map((item) => {
                         const isInv = tab === "inventory";
@@ -258,13 +268,26 @@ const rawLoansRef = useRef<LoanRow[]>([]);
                             }
                             subtitle={
                               isInv
-                                ? `Qty: ${invItem.total_stock}`
+                                ? `${
+                                    invItem.item_properties?.equipment_type
+                                      ? invItem.item_properties.equipment_type
+                                          .charAt(0)
+                                          .toUpperCase() +
+                                        invItem.item_properties.equipment_type.slice(
+                                          1,
+                                        )
+                                      : "—"
+                                  } · ${invItem.total_stock} units`
                                 : (loanItem.display_name ?? "-")
                             }
                             location={!isInv ? loanItem.location : undefined}
                             studentName={
                               !isInv ? loanItem.student_name : undefined
                             }
+                            onClick={() => {
+                              setEditData(item);
+                              setIsEditOpen(true);
+                            }}
                           />
                         );
                       })}
@@ -296,6 +319,26 @@ const rawLoansRef = useRef<LoanRow[]>([]);
           fixedTableType={true}
           hasSelectedRows={selectedRows.length > 0}
           selectedRows={selectedRows}
+        />
+
+        <AddDialog
+          key={`add-${tab}`}
+          isOpen={isAddOpen}
+          onClose={() => setAddOpen(false)}
+          initialTableType={tab === "inventory" ? "Stock" : "Loans"}
+          fixedTableType={true}
+        />
+
+        <AddDialog
+          key={`edit-${editData?.id}`}
+          isOpen={isEditOpen}
+          onClose={() => {
+            setIsEditOpen(false);
+            setEditData(null);
+          }}
+          initialTableType={tab === "inventory" ? "Stock" : "Loans"}
+          fixedTableType={true}
+          editData={editData ?? undefined}
         />
 
         <ImportDialog

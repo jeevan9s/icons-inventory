@@ -1,7 +1,8 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
+import { useEffect } from "react";
 
-type modalSize = "sm" | "md" | "lg" | "xl"
+type modalSize = "sm" | "md" | "lg" | "xl" | "xs"
 
 type ModalProps = {
   isOpen: boolean
@@ -11,15 +12,24 @@ type ModalProps = {
   children: React.ReactNode
 }
 
-const sizes:Record<modalSize, string> = {
-    sm: 'w-80',
-    md: 'w-96', 
-    lg: 'w-[560px]', 
-    xl: 'w-[720px]',
+const sizes: Record<modalSize, string> = {
+  xs: 'w-32',
+  sm: 'w-80',
+  md: 'w-96',
+  lg: 'w-[560px]',
+  xl: 'w-[720px]',
 }
 
-export default function Modal({isOpen, onClose, title, size = 'md', children}: ModalProps) {
-      return (
+export default function Modal({ isOpen, onClose, title, size = 'md', children }: ModalProps) {
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    if (isOpen) window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose]);
+
+  return (
     <AnimatePresence>
       {isOpen && (
         <motion.div
@@ -35,7 +45,7 @@ export default function Modal({isOpen, onClose, title, size = 'md', children}: M
             exit={{ scale: 0.96, opacity: 0, y: 8 }}
             transition={{ duration: 0.15, ease: 'easeOut' }}
             onClick={e => e.stopPropagation()}
-            className={`bg-white border border-neutral-200 rounded-2xl shadow-xl font-mp ${sizes[size]}`}
+            className={`bg-white border border-neutral-200 rounded-2xl shadow-xl font-mp ${sizes[size]} max-h-[90vh] overflow-y-auto`}
           >
             {title && (
               <div className="flex justify-between items-center px-6 py-4 border-b border-neutral-100">
@@ -55,5 +65,5 @@ export default function Modal({isOpen, onClose, title, size = 'md', children}: M
         </motion.div>
       )}
     </AnimatePresence>
-  )
+  );
 }

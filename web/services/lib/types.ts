@@ -2,18 +2,20 @@
 
 export type LoanRow = {
   id: number;
-  item: string;
   signee: string;
-  student_number: string; 
-  student_name: string;
-  location: string;
-  notes: string;
+  student_name?: string | null;
+  student_number: number;
+  location?: string | null;
+  notes?: string | null;
   time_out: string;
-  time_in: string;
-  status: string;
+  time_in?: string | null;
+  status?: string;
   display_name?: string;
-  equipment_type?: equipmentType
+  equipment_type?: equipmentType;
   item_name?: string;
+  item_quantity?: number | null;
+  loan_item_id?: number | null;
+  item_id?: number | null;
 };
 
 export type InventoryRow = {
@@ -61,3 +63,8 @@ export type ExportPayload = {
 };
 
 export type equipmentType = "stationary" | "electronic" | "misc";
+
+export type Role = "Admin" | "Dev" | "Operator";
+export type Section = "users" | "equipment";
+
+export const ROLES: Role[] = ["Admin", "Dev", "Operator"];

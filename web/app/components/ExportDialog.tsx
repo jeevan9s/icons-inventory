@@ -132,7 +132,7 @@ export default function ExportDialog({
                 <button
                   key={t}
                   onClick={() => setTableType(t)}
-                  className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-200 capitalize font-mp
+                  className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-all hover:cursor-pointer hover:scale-103 duration-200 capitalize font-mp
                     ${tableType === t ? "bg-white shadow-sm text-neutral-800" : "text-neutral-500 hover:text-neutral-700"}`}
                 >
                   {t === "Stock" ? <Package size={14} /> : <ClipboardList size={14} />}

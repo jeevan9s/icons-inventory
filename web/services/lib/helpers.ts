@@ -1,7 +1,6 @@
 import { setMinutes, setHours, parseISO } from "date-fns";
 import { getDataFiltered } from "./database-functions/databaseHelpers";
-import { LoanItemRow, LoanRow } from "./types";
-import { ActivityItem } from "./types";
+import { LoanItemRow, LoanRow, ActivityItem } from "./types";
 
 export const createDateTime = (
   date: Date,
@@ -45,7 +44,15 @@ export async function enrichData<T, R>(
 
 export const loanFetcher = async (loan: LoanRow) => {
   if (!loan.signee || !loan.id) {
-    return { display_name: "—", item_name: "—", equipment_type: undefined, item_status: undefined };
+    return {
+      display_name: "—",
+      item_name: "—",
+      equipment_type: undefined,
+      item_status: undefined,
+      item_quantity: undefined,
+      loan_item_id: undefined,
+      item_id: undefined,
+    };
   }
 
   const [profile, loanItems] = await Promise.all([
@@ -61,46 +68,40 @@ export const loanFetcher = async (loan: LoanRow) => {
       item_name: "—",
       equipment_type: undefined,
       item_status: undefined,
+      item_quantity: undefined,
+      loan_item_id: undefined,
+      item_id: undefined,
     };
   }
 
-  // Deduplicate by item_id to avoid fetching the same stock item multiple times
   const uniqueItemIds = Array.from(new Set(itemsList.map(li => li.item_id).filter(Boolean)));
 
   const enrichedItems = await Promise.all(
     uniqueItemIds.map(async (itemId) => {
       const stock = await getDataFiltered("Stock", "id", "e", itemId);
       const itemData = stock?.[0];
-      
       if (!itemData) return null;
 
-      // Count how many times this item appears in the loan
-      const quantity = itemsList.filter(li => li.item_id === itemId).length;
-      // Get the first status from loan items for this stock item
-      const itemStatus = itemsList.find(li => li.item_id === itemId)?.status;
-
-      console.log(`Item ${itemData.name}: quantity=${quantity}, status=${itemStatus}`);
+      const loanItem = itemsList.find(li => li.item_id === itemId);
+      const quantity = loanItem?.item_quantity ?? 1;
+      const itemStatus = loanItem?.status;
 
       return {
         name: formatCapitalized(itemData.name || "Unknown"),
         type: itemData.item_properties?.equipment_type,
         quantity,
-        status: itemStatus
+        status: itemStatus,
       };
     })
   );
 
   const validItems = enrichedItems.filter(Boolean);
 
-  // Get all unique statuses from loan items
   const itemStatuses = Array.from(
     new Set(validItems.map(i => i?.status).filter(Boolean))
   ).join(", ");
 
-  // Format item names with quantity if more than 1
-  const itemNames = validItems.map(i => 
-    i!.quantity > 1 ? `${i!.name} (x${i!.quantity})` : i!.name
-  ).join(", ");
+ const itemNames = validItems.map(i => i!.name).join(", ");
 
   const equipmentTypes = Array.from(
     new Set(validItems.map(i => i?.type).filter(Boolean))
@@ -111,9 +112,38 @@ export const loanFetcher = async (loan: LoanRow) => {
     item_name: itemNames || "—",
     equipment_type: equipmentTypes || undefined,
     item_status: itemStatuses || undefined,
+    item_quantity: validItems.reduce((sum, i) => sum + (i?.quantity ?? 0), 0),
+    loan_item_id: itemsList[0]?.id ?? undefined,
+    item_id: itemsList[0]?.item_id ?? undefined,
   };
 };
 
+export const deEnrichRow = async (tableName: string, row: any) => {
+  console.log(`[deEnrichRow] Processing row for table ${tableName}:`, row);
+  const cleanRow = { ...row };
+
+  const virtualColumns = ["item_name", "status", "equipment_type"];
+  virtualColumns.forEach((col) => delete cleanRow[col]);
+  console.log(`[deEnrichRow] After removing virtual columns:`, cleanRow);
+
+  if (tableName === "Loans") {
+    if (typeof cleanRow.signee === "string" && cleanRow.signee !== "-") {
+      try {
+        const profile = await getDataFiltered("Profiles", "name", "e", cleanRow.signee);
+        if (profile && profile.length > 0) {
+          cleanRow.signee = profile[0].id;
+        }
+      } catch (err) {
+        throw err;
+      }
+    }
+
+    if (cleanRow.time_out) cleanRow.time_out = new Date(cleanRow.time_out).toISOString();
+    if (cleanRow.time_in) cleanRow.time_in = new Date(cleanRow.time_in).toISOString();
+  }
+  
+  return cleanRow;
+};
 
 
 export const getIndicatorColor = (status: string) => {
