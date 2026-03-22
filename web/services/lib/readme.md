@@ -65,7 +65,7 @@ This function is implemented as: `getById(table, id)`. It is used for the target
 
 Does not return anything, however does error to the console upon supabase failure.
 
-#### export()
+#### exporTable()
 
 The function is implemented as `export(table)`
 
