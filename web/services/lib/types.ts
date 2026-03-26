@@ -64,7 +64,7 @@ export type ExportPayload = {
 
 export type equipmentType = "stationary" | "electronic" | "misc";
 
-export type Role = "Admin" | "Dev" | "Operator";
+export type Role = "Admin" | "Dev" | "Operator" | "NULL";
 export type Section = "users" | "equipment";
 
 export const ROLES: Role[] = ["Admin", "Dev", "Operator"];

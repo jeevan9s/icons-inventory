@@ -1,9 +1,10 @@
-import { User } from "@supabase/supabase-js"
-import { StaffUser } from "./types"
+import { User as SupabaseUser } from "@supabase/supabase-js";
+import { User, Role } from "./types";
 
-export const mapUser = (user: User): StaffUser => ({
+export const mapUser = (user: SupabaseUser): User => ({
     id: user.id,
     email: user.email,
-    name: user.user_metadata?.full_name || user.user_metadata?.name || "iCons Staff Member",
-    lastSignIn: user.last_sign_in_at,
+    name: user.user_metadata?.name,
+    role: user.user_metadata?.role as Role,
+    createdAt: user.created_at,
 })

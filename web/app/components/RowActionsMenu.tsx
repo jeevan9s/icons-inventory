@@ -27,19 +27,19 @@ export default function RowActionsMenu({ onEdit, onDelete, itemName }: RowAction
 
   return (
     <>
-      <Modal isOpen={isOpen} onClose={() => setIsOpen(false)} size="xs">
-        <div className="flex flex-col gap-1 font-mp -mx-2">
+      <Modal isOpen={isOpen} onClose={() => setIsOpen(false)} size="sm">
+        <div className="flex flex-col items-center justify-center gap-1 font-mp -mx-2 w-full">
           <button
             onClick={() => { setIsOpen(false); onEdit(); }}
-            className="flex items-center gap-2.5 px-3 py-2 text-xs text-neutral-600 hover:bg-neutral-50 rounded-lg transition-all hover:cursor-pointer hover:scale-103 w-full text-left"
+            className="flex items-center gap-2.5 px-3 py-2 text-lg text-neutral-600 hover:bg-neutral-50 rounded-lg transition-all hover:cursor-pointer hover:scale-103 w-full text-center justify-center"
           >
-            <Pencil size={13} className="text-neutral-400" /> Edit
+            <Pencil size={18} className="text-neutral-400" /> Edit
           </button>
           <button
             onClick={handleDelete}
-            className="flex items-center gap-2.5 px-3 py-2 text-xs text-red-500 hover:bg-red-50 rounded-lg transition-all hover:cursor-pointer hover:scale-103 w-full text-left"
+            className="flex items-center gap-2.5 px-3 py-2 text-lg text-red-500 hover:bg-red-50 rounded-lg transition-all hover:cursor-pointer hover:scale-103 w-full text-center justify-center"
           >
-            <Trash2 size={13} /> Delete
+            <Trash2 size={18} /> Delete
           </button>
         </div>
       </Modal>

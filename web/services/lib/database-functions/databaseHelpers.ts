@@ -3,10 +3,11 @@
 import Papa from "papaparse";
 import { Database } from './database.types';
 import { createClient } from '@supabase/supabase-js'
+import { createBrowserClient } from "@supabase/ssr";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUB_KEY
-const supabase = createClient<Database>(supabaseUrl!, supabaseKey!)
+const supabase = createBrowserClient<Database>(supabaseUrl!, supabaseKey!)
 
 //  Gets data entries from specified table ordered based on an input column name
 //  When no additional parameters supplied, returns all entries in table.

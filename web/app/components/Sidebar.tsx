@@ -58,6 +58,7 @@ export default function Sidebar({
 }: sbProps) {
   const pathname = usePathname();
   const [width, setWidth] = useState(DEFAULT_WIDTH);
+  const [mounted, setMounted] = useState(false);
   const isResizing = useRef(false);
   const [, forceUpdate] = useState(0);
   const iconOnly = isLocked && width <= ICON_ONLY_WIDTH + 10;
@@ -79,6 +80,7 @@ export default function Sidebar({
   };
 
   useEffect(() => {
+    setMounted(true);
     onWidthChange?.(DEFAULT_WIDTH);
   }, [onWidthChange]);
 
@@ -123,9 +125,8 @@ export default function Sidebar({
   const renderNavButton = (icon: any, label: string, href?: string, action?: () => void) => {
     const Icon = icon;
     const content = (
-      <motion.button
+      <motion.div
         layout
-        onClick={action}
         className={navItemClass(href)}
       >
         <Icon size={18} className="md:w-5 md:h-5 shrink-0" />
@@ -143,19 +144,25 @@ export default function Sidebar({
             </motion.span>
           )}
         </AnimatePresence>
-      </motion.button>
+      </motion.div>
     );
 
-    return href ? (
-      <Link href={href} key={label} className="w-full">
+    if (href) {
+      return (
+        <Link href={href} key={label} className="w-full">
+          {content}
+        </Link>
+      );
+    }
+
+    return (
+      <button key={label} onClick={action} className="w-full bg-transparent border-none p-0 outline-none">
         {content}
-      </Link>
-    ) : (
-      <div key={label} className="w-full">
-        {content}
-      </div>
+      </button>
     );
   };
+
+  if (!mounted) return null;
 
   return (
     <>

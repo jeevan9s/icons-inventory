@@ -36,6 +36,8 @@ import {
 } from "@/services/lib/helpers";
 import { InventoryRow, LoanRow } from "@/services/lib/types";
 import ImportDialog from "@/app/components/ImportDialog";
+import { getUserInfo } from "@/services/auth/authCallers";
+import { toast } from "sonner";
 
 const UploadIcon = dynamic(
   () => import("lucide-react").then((mod) => mod.Upload),
@@ -71,24 +73,44 @@ export default function Dashboard() {
   const typedInventoryData = inventoryData as InventoryRow[];
   const typedLoansData = rawLoansData as LoanRow[];
 
-  const handleClear = async () => {
-    const isInventory = tab === "inventory";
-    const mutation = isInventory ? deleteStock : deleteLoans;
-    const currentData = isInventory ? typedInventoryData : processedLoans;
-    const targets = selectedRows.length > 0 ? selectedRows : currentData;
+  
 
-    if (targets.length === 0) return;
+const handleClear = async () => {
+  const user = await getUserInfo();
+  // console.log(user);
+  
+  if (!user || !["Admin", "Dev"].includes(user.role)) {
+    toast.error("You don't have permisson to clear records.")
+    return;
+  }
 
-    const confirmMsg =
-      selectedRows.length > 0
-        ? `Delete ${selectedRows.length} selected items?`
-        : `Are you sure you want to clear ALL ${tab}?`;
+  const isInventory = tab === "inventory";
+  const mutation = isInventory ? deleteStock : deleteLoans;
+  const currentData = isInventory ? typedInventoryData : processedLoans;
+  const targets = selectedRows.length > 0 ? selectedRows : currentData;
 
-    if (window.confirm(confirmMsg)) {
-      targets.forEach((row: InventoryRow | LoanRow) => mutation.mutate(row.id));
-      setSelectedRows([]);
+  if (targets.length === 0) return;
+
+  const confirmMsg =
+    selectedRows.length > 0
+      ? `Delete ${selectedRows.length} selected items?`
+      : `Are you sure you want to clear ALL ${tab}?`;
+
+    toast('Clear Records',{
+    description: confirmMsg, 
+    action: {
+      label: 'Clear', 
+      onClick : () =>   {  targets.forEach((row: InventoryRow | LoanRow) => mutation.mutate(row.id));
+    setSelectedRows([]);}
+    }, 
+    cancel: {
+      label: 'Cancel',
+      onClick: () => {}
     }
-  };
+
+      }
+    )
+  }
 
   const rawLoansRef = useRef<LoanRow[]>([]);
 

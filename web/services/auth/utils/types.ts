@@ -1,13 +1,13 @@
 import { loadEnvVar } from "./helpers";
 
-type Role = "Dev" | "Admin" | "Operator";
+export type Role = "Dev" | "Admin" | "Operator";
 
 export interface User {
     id: string;
     name: string | undefined, 
     email: string | undefined,
     role:Role;
-    createdAt: string | undefined
+    createdAt?: string | undefined
 };
 
 

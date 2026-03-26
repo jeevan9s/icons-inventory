@@ -32,5 +32,4 @@ export async function getUserInfo() {
         console.error("failed to get user info", error);
         return null;
     }
-
 }

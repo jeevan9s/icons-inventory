@@ -32,14 +32,28 @@ export async function populateUser(): Promise<User | null> {
     const supabase = getBrowserClient();
 
     try {
-        const { data: {user}, error}  = await supabase.auth.getUser();
+        const { data: { user }, error } = await supabase.auth.getUser();
         if (error || !user) return null;
-        return mapUser(user);
+
+        const { data: profile } = await supabase
+            .from("Profiles")
+            .select("*")
+            .eq("id", user.id)
+            .single();
+
+        if (!profile) return null;
+
+        return {
+            id: user.id,
+            email: user.email,
+            name: profile.name,
+            role: profile.role,
+            createdAt: user.created_at,
+        };
 
     } catch (error) {
         console.error("failed to populate user: ", error);
         return null;
     }
 }
-
 

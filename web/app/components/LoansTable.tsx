@@ -28,11 +28,11 @@ import { format } from "date-fns";
 import { LoanRow } from "@/services/lib/types";
 import { enrichData, formatCapitalized, loanFetcher } from "@/services/lib/helpers";
 import { useUpdateRow, useReturnToggle, useUpdateLoanQuantity, useGetRows, useDeleteLoan } from "@/services/lib/hooks/useDatabase";
-import { useUser } from "@/services/lib/hooks/useAuth";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import RowActionsMenu from "./RowActionsMenu";
 import AddDialog from "./AddDialog";
+import { getUserInfo } from "@/services/auth/authCallers";
 
 const LOAN_READONLY_FIELDS = ["equipment_type", "display_name", "status", "item_status"];
 
@@ -58,9 +58,7 @@ const EditableCell = ({
 
   const onBlur = () => {
     setIsEditing(false);
-    if (value !== initialValue) {
-      updateData(rowId, columnId, value);
-    }
+    if (value !== initialValue) updateData(rowId, columnId, value);
   };
 
   const onKeyDown = (e: React.KeyboardEvent) => {
@@ -110,21 +108,16 @@ export default function LoansTable({ data, onSelectionChange }: LoansTableProps)
 
   const updateLoan = useUpdateRow("Loans");
   const updateLoanRef = useRef(updateLoan);
-  useEffect(() => {
-    updateLoanRef.current = updateLoan;
-  }, [updateLoan]);
+  useEffect(() => { updateLoanRef.current = updateLoan; }, [updateLoan]);
 
   const updateStock = useUpdateRow("Stock");
   const updateStockRef = useRef(updateStock);
-  useEffect(() => {
-    updateStockRef.current = updateStock;
-  }, [updateStock]);
+  useEffect(() => { updateStockRef.current = updateStock; }, [updateStock]);
 
   const returnToggle = useReturnToggle();
   const updateLoanQuantity = useUpdateLoanQuantity();
   const deleteLoan = useDeleteLoan();
   const router = useRouter();
-  const { user } = useUser();
 
   const { data: stockRows = [] } = useGetRows("Stock");
 
@@ -150,6 +143,27 @@ export default function LoansTable({ data, onSelectionChange }: LoansTableProps)
     });
     return () => { active = false; };
   }, [data, refreshKey]);
+
+  const handleDelete = async (id: number) => {
+    const user = await getUserInfo();
+
+    if (!user || !["Admin", "Dev"].includes(user.role)) {
+      toast.error("You don't have permission to delete items.");
+      return;
+    }
+
+    toast("Delete Loan", {
+      description: "Are you sure you want to delete this loan?",
+      action: {
+        label: "Delete",
+        onClick: () => deleteLoan.mutate(id),
+      },
+      cancel: {
+        label: "Cancel",
+        onClick: () => {},
+      },
+    });
+  };
 
   const handleUpdate = useCallback(
     (id: string, columnId: string, value: string) => {
@@ -376,17 +390,18 @@ export default function LoansTable({ data, onSelectionChange }: LoansTableProps)
       },
       {
         id: "actions",
+        header: () => null,
         cell: ({ row }) => (
           <RowActionsMenu
             itemName={row.original.item_name}
             onEdit={() => { setEditData(row.original); setIsEditOpen(true); }}
-            onDelete={() => deleteLoan.mutate(row.original.id)}
+            onDelete={() => handleDelete(row.original.id)}
           />
         ),
         size: 40,
       },
     ],
-    [handleUpdate, handleReturnToggle, equipmentTypes],
+    [handleUpdate, handleReturnToggle, equipmentTypes, handleDelete],
   );
 
   const table = useReactTable({
@@ -420,6 +435,22 @@ export default function LoansTable({ data, onSelectionChange }: LoansTableProps)
             className="h-7 bg-transparent border-none text-xs focus-visible:ring-0 p-0"
           />
         </div>
+        {table.getSelectedRowModel().rows.length > 0 && (
+          <div className="flex items-center gap-2 animate-in fade-in zoom-in duration-200">
+            <span className="text-[12px] font-bold text-neutral-500 bg-neutral-100 px-2 py-0.5 rounded-full">
+              {table.getSelectedRowModel().rows.length} Selected
+            </span>
+            <button
+              onClick={() => {
+                table.getSelectedRowModel().rows.forEach((row) => handleDelete(row.original.id));
+                setRowSelection({});
+              }}
+              className="text-[12px] text-neutral-400 hover:text-neutral-600 underline decoration-neutral-200"
+            >
+              Clear
+            </button>
+          </div>
+        )}
       </div>
       <div className="overflow-auto flex-1 custom-scrollbar">
         <Table>
