@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import dynamic from "next/dynamic";
 import Layout from "@/app/components/Layout";
 import {
   Plus,
@@ -13,11 +14,9 @@ import {
   Table as TableIcon,
   LayoutGrid,
   Trash2,
-  Upload,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import InventoryTable from "@/app/components/InventoryTable";
-import LoansTable from "@/app/components/LoansTable";
 import StatCard from "@/app/components/StatCard";
 import DashboardCard from "@/app/components/DashboardCard";
 import ActivityFeed from "@/app/components/ActivityFeed";
@@ -37,6 +36,15 @@ import {
 } from "@/services/lib/helpers";
 import { InventoryRow, LoanRow } from "@/services/lib/types";
 import ImportDialog from "@/app/components/ImportDialog";
+
+const UploadIcon = dynamic(
+  () => import("lucide-react").then((mod) => mod.Upload),
+  { ssr: false }
+);
+const LoansTable = dynamic(
+  () => import("@/app/components/LoansTable"),
+  { ssr: false }
+);
 
 type Tab = "inventory" | "loans";
 type ViewMode = "table" | "grid";
@@ -212,7 +220,7 @@ export default function Dashboard() {
                   onClick={() => setImportOpen(true)}
                   className="flex items-center gap-1.5 px-4 py-2 bg-neutral-800 text-white text-[11px] rounded-lg hover:bg-neutral-700 hover:scale-103 hover:cursor-pointer transition-all duration-200 ease-in-out font-medium"
                 >
-                  <Upload size={12} /> {formatText("Import")}
+                  <UploadIcon size={12} /> {formatText("Import")}
                 </button>
                 <button
                   onClick={() => setExportOpen(true)}
@@ -238,10 +246,12 @@ export default function Dashboard() {
                         onSelectionChange={handleSelectionChange}
                       />
                     ) : (
-                      <LoansTable
-                        data={processedLoans}
-                        onSelectionChange={handleSelectionChange}
-                      />
+                      processedLoans.length > 0 && (
+                        <LoansTable
+                          data={processedLoans}
+                          onSelectionChange={handleSelectionChange}
+                        />
+                      )
                     )
                   ) : (
                     <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 2xl:grid-cols-7 gap-2 p-3">
@@ -270,12 +280,8 @@ export default function Dashboard() {
                               isInv
                                 ? `${
                                     invItem.item_properties?.equipment_type
-                                      ? invItem.item_properties.equipment_type
-                                          .charAt(0)
-                                          .toUpperCase() +
-                                        invItem.item_properties.equipment_type.slice(
-                                          1,
-                                        )
+                                      ? invItem.item_properties.equipment_type.charAt(0).toUpperCase() +
+                                        invItem.item_properties.equipment_type.slice(1)
                                       : "—"
                                   } · ${invItem.total_stock} units`
                                 : (loanItem.display_name ?? "-")

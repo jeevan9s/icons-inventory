@@ -53,9 +53,7 @@ const EditableCell = ({
 
   const onBlur = () => {
     setIsEditing(false);
-    if (value !== initialValue) {
-      updateData(rowId, columnId, value);
-    }
+    if (value !== initialValue) updateData(rowId, columnId, value);
   };
 
   const onKeyDown = (e: React.KeyboardEvent) => {
@@ -104,163 +102,98 @@ export default function InventoryTable({ data, onSelectionChange }: InventoryTab
 
   const updateStock = useUpdateRow("Stock");
   const updateStockRef = useRef(updateStock);
-  useEffect(() => {
-    updateStockRef.current = updateStock;
-  }, [updateStock]);
+  useEffect(() => { updateStockRef.current = updateStock; }, [updateStock]);
 
   const deleteStock = useDeleteRow("Stock");
 
   const { data: stockRows = [] } = useGetRows("Stock");
 
-  const customTypes = typeof window !== "undefined"
-    ? JSON.parse(localStorage.getItem("custom_equipment_types") ?? "[]")
-    : [];
-
-  const equipmentTypes = Array.from(
-    new Set([
+  const equipmentTypes = useMemo(() => {
+    if (typeof window === "undefined") return [];
+    const customTypes = JSON.parse(localStorage.getItem("custom_equipment_types") ?? "[]");
+    return Array.from(new Set([
       ...(stockRows as any[]).map((r) => r.item_properties?.equipment_type).filter(Boolean),
       ...customTypes,
-    ])
-  ) as string[];
+    ]));
+  }, [stockRows]);
 
   const handleUpdate = useCallback(
     (id: string, columnId: string, value: string) => {
       let parsedValue: string | number = value;
-
-      if (columnId === "total_stock" || columnId === "net_stock") {
-        parsedValue = Number(value);
-      }
+      if (columnId === "total_stock" || columnId === "net_stock") parsedValue = Number(value);
 
       if (columnId === "equipment_type") {
         const row = data.find((r) => r.id.toString() === id);
         updateStockRef.current.mutate(
-          {
-            id,
-            data: {
-              item_properties: {
-                ...row?.item_properties,
-                equipment_type: value as InventoryRow["item_properties"] extends { equipment_type?: infer T } ? T : never,
-              },
-            },
-          },
-          {
-            onSuccess: () => toast.success("Updated successfully"),
-            onError: () => toast.error("Failed to update"),
-          },
+          { id, data: { item_properties: { ...row?.item_properties, equipment_type: value } } },
+          { onSuccess: () => toast.success("Updated successfully"), onError: () => toast.error("Failed to update") }
         );
         return;
       }
 
       updateStockRef.current.mutate(
         { id, data: { [columnId]: parsedValue } },
-        {
-          onSuccess: () => toast.success("Updated successfully"),
-          onError: () => toast.error("Failed to update"),
-        },
+        { onSuccess: () => toast.success("Updated successfully"), onError: () => toast.error("Failed to update") }
       );
     },
-    [data],
+    [data]
   );
 
   const columns = useMemo<ColumnDef<InventoryRow>[]>(
     () => [
-      {
-        id: "select",
-        header: ({ table }) => (
-          <Checkbox
-            checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
-            onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-            aria-label="Select all"
-            className="translate-y-[2px] border-neutral-300 data-[state=checked]:bg-neutral-900 data-[state=checked]:border-neutral-900"
-          />
-        ),
-        cell: ({ row }) => (
-          <Checkbox
-            checked={row.getIsSelected()}
-            onCheckedChange={(value) => row.toggleSelected(!!value)}
-            aria-label="Select row"
-            className="translate-y-[2px] border-neutral-300 data-[state=checked]:bg-neutral-900 data-[state=checked]:border-neutral-900"
-          />
-        ),
-        size: 40,
-        enableSorting: false,
-      },
-      {
-        accessorKey: "name",
-        header: ({ column }) => (
-          <ColHeader label="Item Name" type="text" isSorted={column.getIsSorted()} onSort={column.getToggleSortingHandler()!} />
-        ),
-        cell: ({ getValue, row, column }) => (
-          <EditableCell
-            value={formatCapitalized(getValue() as string) || ""}
-            rowId={row.original.id.toString()}
-            columnId={column.id}
-            updateData={handleUpdate}
-          />
-        ),
-      },
-      {
-        id: "equipment_type",
-        accessorFn: (row) => row.item_properties?.equipment_type ?? "",
-        header: ({ column }) => (
-          <ColHeader label="Type" type="text" isSorted={column.getIsSorted()} onSort={column.getToggleSortingHandler()!} />
-        ),
-        cell: ({ getValue, row }) => {
-          const current = getValue() as string;
-          return (
-            <select
-              value={current || ""}
-              onChange={(e) => handleUpdate(row.original.id.toString(), "equipment_type", e.target.value)}
-              className="w-full h-7 text-sm border-none bg-transparent text-neutral-600 font-mp focus:outline-none focus:ring-1 focus:ring-blue-400 rounded px-2 capitalize cursor-pointer"
-            >
-              <option value="">—</option>
-              {equipmentTypes.map((type) => (
-                <option key={type} value={type} className="capitalize">{type}</option>
-              ))}
-            </select>
-          );
-        },
-      },
-      {
-        accessorKey: "total_stock",
-        header: ({ column }) => (
-          <ColHeader label="Total" type="int" isSorted={column.getIsSorted()} onSort={column.getToggleSortingHandler()!} />
-        ),
-        cell: ({ getValue, row, column }) => (
-          <EditableCell value={String(getValue() ?? "")} rowId={row.original.id.toString()} columnId={column.id} updateData={handleUpdate} />
-        ),
-      },
-      {
-        accessorKey: "net_stock",
-        header: ({ column }) => (
-          <ColHeader label="Available" type="int" isSorted={column.getIsSorted()} onSort={column.getToggleSortingHandler()!} />
-        ),
-        cell: ({ getValue, row, column }) => (
-          <EditableCell value={String(getValue() ?? "")} rowId={row.original.id.toString()} columnId={column.id} updateData={handleUpdate} />
-        ),
-      },
-      {
-        accessorKey: "status",
-        header: ({ column }) => (
-          <ColHeader label="Status" type="text" isSorted={column.getIsSorted()} onSort={column.getToggleSortingHandler()!} />
-        ),
-        cell: ({ row }) => <StatusBadge status={getStockStatus(row.original)} />,
-      },
-      {
-        id: "actions",
-        header: () => null,
-        cell: ({ row }) => (
-          <RowActionsMenu
-            itemName={row.original.name}
-            onEdit={() => { setEditData(row.original); setIsEditOpen(true); }}
-            onDelete={() => deleteStock.mutate(row.original.id)}
-          />
-        ),
-        size: 40,
-        enableSorting: false,
-      },
+      { id: "select", header: ({ table }) => (
+        <Checkbox
+          checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          aria-label="Select all"
+          className="translate-y-[2px] border-neutral-300 data-[state=checked]:bg-neutral-900 data-[state=checked]:border-neutral-900"
+        />
+      ), cell: ({ row }) => (
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label="Select row"
+          className="translate-y-[2px] border-neutral-300 data-[state=checked]:bg-neutral-900 data-[state=checked]:border-neutral-900"
+        />
+      ), size: 40, enableSorting: false },
+      { accessorKey: "name", header: ({ column }) => (
+        <ColHeader label="Item Name" type="text" isSorted={column.getIsSorted()} onSort={column.getToggleSortingHandler()!} />
+      ), cell: ({ getValue, row, column }) => (
+        <EditableCell value={formatCapitalized(getValue() as string) || ""} rowId={row.original.id.toString()} columnId={column.id} updateData={handleUpdate} />
+      )},
+      { id: "equipment_type", accessorFn: (row) => row.item_properties?.equipment_type ?? "", header: ({ column }) => (
+        <ColHeader label="Type" type="text" isSorted={column.getIsSorted()} onSort={column.getToggleSortingHandler()!} />
+      ), cell: ({ getValue, row }) => {
+        const current = getValue() as string;
+        return (
+          <select
+            value={current || ""}
+            onChange={(e) => handleUpdate(row.original.id.toString(), "equipment_type", e.target.value)}
+            className="w-full h-7 text-sm border-none bg-transparent text-neutral-600 font-mp focus:outline-none focus:ring-1 focus:ring-blue-400 rounded px-2 capitalize cursor-pointer"
+          >
+            <option value="">—</option>
+            {equipmentTypes.map((type) => <option key={type} value={type} className="capitalize">{type}</option>)}
+          </select>
+        );
+      }},
+      { accessorKey: "total_stock", header: ({ column }) => (
+        <ColHeader label="Total" type="int" isSorted={column.getIsSorted()} onSort={column.getToggleSortingHandler()!} />
+      ), cell: ({ getValue, row, column }) => (
+        <EditableCell value={String(getValue() ?? "")} rowId={row.original.id.toString()} columnId={column.id} updateData={handleUpdate} />
+      )},
+      { accessorKey: "net_stock", header: ({ column }) => (
+        <ColHeader label="Available" type="int" isSorted={column.getIsSorted()} onSort={column.getToggleSortingHandler()!} />
+      ), cell: ({ getValue, row, column }) => (
+        <EditableCell value={String(getValue() ?? "")} rowId={row.original.id.toString()} columnId={column.id} updateData={handleUpdate} />
+      )},
+      { accessorKey: "status", header: ({ column }) => (
+        <ColHeader label="Status" type="text" isSorted={column.getIsSorted()} onSort={column.getToggleSortingHandler()!} />
+      ), cell: ({ row }) => <StatusBadge status={getStockStatus(row.original)} /> },
+      { id: "actions", header: () => null, cell: ({ row }) => (
+        <RowActionsMenu itemName={row.original.name} onEdit={() => { setEditData(row.original); setIsEditOpen(true); }} onDelete={() => deleteStock.mutate(row.original.id)} />
+      ), size: 40, enableSorting: false },
     ],
-    [handleUpdate, equipmentTypes],
+    [handleUpdate, equipmentTypes]
   );
 
   const table = useReactTable({
@@ -282,37 +215,22 @@ export default function InventoryTable({ data, onSelectionChange }: InventoryTab
       const hasChanged =
         selectedData.length !== previousSelectionRef.current.length ||
         selectedData.some((row, idx) => row.id !== previousSelectionRef.current[idx]?.id);
-      if (hasChanged) {
-        previousSelectionRef.current = selectedData;
-        onSelectionChange(selectedData);
-      }
+      if (hasChanged) previousSelectionRef.current = selectedData;
+      onSelectionChange(selectedData);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rowSelection]);
+  }, [rowSelection, onSelectionChange, table]);
 
   return (
     <div className="flex flex-col h-full bg-white">
       <div className="flex items-center justify-between px-3 py-2 border-b border-neutral-100 sticky top-0 z-10 bg-white">
         <div className="flex items-center gap-2 flex-1">
           <Search size={13} className="text-neutral-400 shrink-0" />
-          <Input
-            value={globalFilter}
-            onChange={(e) => setGlobalFilter(e.target.value)}
-            placeholder="Search inventory..."
-            className="h-7 bg-transparent border-none text-xs text-neutral-600 placeholder:text-neutral-400 focus-visible:ring-0 font-mp p-0"
-          />
+          <Input value={globalFilter} onChange={(e) => setGlobalFilter(e.target.value)} placeholder="Search inventory..." className="h-7 bg-transparent border-none text-xs text-neutral-600 placeholder:text-neutral-400 focus-visible:ring-0 font-mp p-0" />
         </div>
         {table.getSelectedRowModel().rows.length > 0 && (
           <div className="flex items-center gap-2 animate-in fade-in zoom-in duration-200">
-            <span className="text-[10px] font-bold text-neutral-500 bg-neutral-100 px-2 py-0.5 rounded-full">
-              {table.getSelectedRowModel().rows.length} Selected
-            </span>
-            <button
-              onClick={() => setRowSelection({})}
-              className="text-[10px] text-neutral-400 hover:text-neutral-600 underline decoration-neutral-200"
-            >
-              Clear
-            </button>
+            <span className="text-[10px] font-bold text-neutral-500 bg-neutral-100 px-2 py-0.5 rounded-full">{table.getSelectedRowModel().rows.length} Selected</span>
+            <button onClick={() => setRowSelection({})} className="text-[10px] text-neutral-400 hover:text-neutral-600 underline decoration-neutral-200">Clear</button>
           </div>
         )}
       </div>
@@ -322,11 +240,7 @@ export default function InventoryTable({ data, onSelectionChange }: InventoryTab
             {table.getHeaderGroups().map((hg) => (
               <TableRow key={hg.id} className="border-neutral-100 hover:bg-transparent">
                 {hg.headers.map((header) => (
-                  <TableHead
-                    key={header.id}
-                    className="bg-neutral-50 px-4 py-2 text-xs border-r border-neutral-100 last:border-r-0 font-bold"
-                    style={{ width: header.getSize() }}
-                  >
+                  <TableHead key={header.id} className="bg-neutral-50 px-4 py-2 text-xs border-r border-neutral-100 last:border-r-0 font-bold" style={{ width: header.getSize() }}>
                     {flexRender(header.column.columnDef.header, header.getContext())}
                   </TableHead>
                 ))}
@@ -334,40 +248,21 @@ export default function InventoryTable({ data, onSelectionChange }: InventoryTab
             ))}
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows.length ? (
-              table.getRowModel().rows.map((row, i) => (
-                <motion.tr
-                  key={row.id}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: i * 0.005 }}
-                  className={`border-b border-neutral-50 transition-colors ${row.getIsSelected() ? "bg-neutral-50" : "hover:bg-neutral-50/50"}`}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className="px-4 py-2 text-sm border-r border-neutral-50 last:border-r-0">
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </TableCell>
-                  ))}
-                </motion.tr>
-              ))
-            ) : (
+            {table.getRowModel().rows.length ? table.getRowModel().rows.map((row, i) => (
+              <motion.tr key={row.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.005 }} className={`border-b border-neutral-50 transition-colors ${row.getIsSelected() ? "bg-neutral-50" : "hover:bg-neutral-50/50"}`}>
+                {row.getVisibleCells().map((cell) => (
+                  <TableCell key={cell.id} className="px-4 py-2 text-sm border-r border-neutral-50 last:border-r-0">{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
+                ))}
+              </motion.tr>
+            )) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className="text-center text-neutral-400 py-12 font-mp text-sm">
-                  No items found.
-                </TableCell>
+                <TableCell colSpan={columns.length} className="text-center text-neutral-400 py-12 font-mp text-sm">No items found.</TableCell>
               </TableRow>
             )}
           </TableBody>
         </Table>
       </div>
-
-      <AddDialog
-        isOpen={isEditOpen}
-        onClose={() => { setIsEditOpen(false); setEditData(null); }}
-        initialTableType="Stock"
-        fixedTableType={true}
-        editData={editData ?? undefined}
-      />
+      <AddDialog isOpen={isEditOpen} onClose={() => { setIsEditOpen(false); setEditData(null); }} initialTableType="Stock" fixedTableType={true} editData={editData ?? undefined} />
     </div>
   );
 }
