@@ -10,24 +10,13 @@ import {
   ListTodo,
   AlertTriangle,
   Download,
-  History,
   Table as TableIcon,
   LayoutGrid,
   Trash2,
+  History,
   LineChart as LineChartIcon,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-} from "recharts";
+import {AnimatePresence } from "framer-motion";
 import InventoryTable from "@/app/components/InventoryTable";
 import StatCard from "@/app/components/StatCard";
 import DashboardCard from "@/app/components/DashboardCard";
@@ -54,7 +43,7 @@ import { toast } from "sonner";
 
 const UploadIcon = dynamic(
   () => import("lucide-react").then((mod) => mod.Upload),
-  { ssr: false }
+  { ssr: false },
 );
 const LoansTable = dynamic(() => import("@/app/components/LoansTable"), {
   ssr: false,
@@ -62,156 +51,6 @@ const LoansTable = dynamic(() => import("@/app/components/LoansTable"), {
 
 type Tab = "inventory" | "loans";
 type ViewMode = "table" | "grid" | "chart";
-
-function buildCumulativeLoansData(
-  loans: LoanRow[]
-): { date: string; total: number }[] {
-  const counts: Record<string, number> = {};
-
-  loans.forEach((loan) => {
-    const raw = (loan as Record<string, unknown>)["time_out"];
-    if (!raw) return;
-    const date = new Date(raw as string);
-    if (isNaN(date.getTime())) return;
-    const key = date.toISOString().slice(0, 10);
-    counts[key] = (counts[key] ?? 0) + 1;
-  });
-
-  const sorted = Object.entries(counts).sort(([a], [b]) =>
-    a.localeCompare(b)
-  );
-
-  let running = 0;
-  return sorted.map(([date, count]) => {
-    running += count;
-    return { date, total: running };
-  });
-}
-
-export function buildDemandData(
-  inventory: InventoryRow[]
-): { name: string; borrowed: number }[] {
-  return inventory
-    .map((item) => ({
-      name: item.name ?? "Unknown",
-      borrowed: Math.max(0, (item.total_stock ?? 0) - (item.net_stock ?? 0)),
-    }))
-    .filter((d) => d.borrowed > 0)
-    .sort((a, b) => b.borrowed - a.borrowed)
-    .slice(0, 15);
-}
-
-function EmptyChart({ message }: { message: string }) {
-  return (
-    <div className="flex items-center justify-center h-48 text-neutral-400 text-xs">
-      {message}
-    </div>
-  );
-}
-
-function buildHourlyLoansData(loans: LoanRow[]) {
-  const counts: Record<string, number> = {};
-
-  loans.forEach((loan) => {
-    const raw = (loan as any).time_out;
-    if (!raw) return;
-    const date = new Date(raw as string);
-    if (isNaN(date.getTime())) return;
-    const hourKey = `${date.getHours().toString().padStart(2, "0")}:00`;
-    counts[hourKey] = (counts[hourKey] ?? 0) + 1;
-  });
-
-  const sorted = Object.entries(counts).sort(([a], [b]) => a.localeCompare(b));
-  let running = 0;
-  return sorted.map(([hour, count]) => {
-    running += count;
-    return { hour, total: running };
-  });
-}
-
-function LoansChart({ loans, selectedRows }: { loans: LoanRow[]; selectedRows: (InventoryRow | LoanRow)[] }) {
-  const source = selectedRows.length > 0 ? (selectedRows as LoanRow[]) : loans;
-  const data = buildHourlyLoansData(source);
-
-  return (
-    <div className="flex flex-col h-full w-full justify-center items-center p-6 gap-3">
-      <div className="flex items-center justify-between shrink-0 w-full">
-        <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">
-          Cumulative Rentals by Hour
-        </p>
-        {selectedRows.length > 0 && (
-          <span className="text-[10px] font-medium text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-full">
-            {selectedRows.length} selected
-          </span>
-        )}
-      </div>
-      {data.length === 0 ? (
-        <EmptyChart message="No loans with a valid time_out field found." />
-      ) : (
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data} margin={{ top: 4, right: 24, left: 0, bottom: 4 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-            <XAxis dataKey="hour" tick={{ fontSize: 10, fill: "#6b7280" }} tickLine={false} axisLine={false} />
-            <YAxis tick={{ fontSize: 10, fill: "#6b7280" }} tickLine={false} axisLine={false} allowDecimals={false} />
-            <Tooltip
-              contentStyle={{
-                fontSize: 11,
-                borderRadius: 8,
-                border: "1px solid #f0f0f0",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
-              }}
-              labelStyle={{ color: "#404040", fontWeight: 600 }}
-              formatter={(value: number) => [value, "Total Rentals"]}
-            />
-            <Line type="monotone" dataKey="total" stroke="#6f956d" strokeWidth={3} dot={{ r: 5, fill: "#6f956d", strokeWidth: 0 }} activeDot={{ r: 7 }} />
-          </LineChart>
-        </ResponsiveContainer>
-      )}
-    </div>
-  );
-}
-
-function InventoryDemandChart({ inventory, selectedRows }: { inventory: InventoryRow[]; selectedRows: (InventoryRow | LoanRow)[] }) {
-  const source = selectedRows.length > 0 ? (selectedRows as InventoryRow[]) : inventory;
-  const data = buildDemandData(source);
-
-  return (
-    <div className="flex flex-col h-full w-full justify-center items-center p-6 gap-3">
-      <div className="flex items-center justify-between shrink-0 w-full">
-        <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">
-          Highest Demand Items
-        </p>
-        {selectedRows.length > 0 && (
-          <span className="text-[10px] font-medium text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-full">
-            {selectedRows.length} selected
-          </span>
-        )}
-      </div>
-      {data.length === 0 ? (
-        <EmptyChart message="No items with units currently borrowed found." />
-      ) : (
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} layout="vertical" margin={{ top: 0, right: 32, left: 8, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" horizontal={false} />
-            <XAxis type="number" tick={{ fontSize: 10, fill: "#6b7280" }} tickLine={false} axisLine={false} allowDecimals={false} />
-            <YAxis type="category" dataKey="name" width={140} tick={{ fontSize: 10, fill: "#374151" }} tickLine={false} axisLine={false} />
-            <Tooltip
-              contentStyle={{
-                fontSize: 11,
-                borderRadius: 8,
-                border: "1px solid #f0f0f0",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
-              }}
-              cursor={{ fill: "#f9f9f9" }}
-              formatter={(value: number) => [value, "Currently Borrowed"]}
-            />
-            <Bar dataKey="borrowed" radius={[0, 4, 4, 0]} fill="#6f956d" maxBarSize={24} />
-          </BarChart>
-        </ResponsiveContainer>
-      )}
-    </div>
-  );
-}
 
 export default function Dashboard() {
   const deleteStock = useDeleteRow("Stock");
@@ -225,7 +64,9 @@ export default function Dashboard() {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editData, setEditData] = useState<InventoryRow | LoanRow | null>(null);
   const [isAnalyticsOpen, setAnalyticsOpen] = useState(false);
-  const [selectedRows, setSelectedRows] = useState<(InventoryRow | LoanRow)[]>([]);
+  const [selectedRows, setSelectedRows] = useState<(InventoryRow | LoanRow)[]>(
+    [],
+  );
   const [processedLoans, setProcessedLoans] = useState<LoanRow[]>([]);
   const [showReturned, setShowReturned] = useState(false);
   const [onlyReturned, setOnlyReturned] = useState(false);
@@ -262,7 +103,7 @@ export default function Dashboard() {
         label: "Clear",
         onClick: () => {
           targets.forEach((row: InventoryRow | LoanRow) =>
-            mutation.mutate(row.id)
+            mutation.mutate(row.id),
           );
           setSelectedRows([]);
         },
@@ -309,7 +150,7 @@ export default function Dashboard() {
         return rows;
       });
     },
-    []
+    [],
   );
 
   const filteredLoans = processedLoans.filter((loan) => {
@@ -320,13 +161,13 @@ export default function Dashboard() {
   });
 
   const activeLoans = processedLoans.filter((l) =>
-    ["Active", "Overdue"].includes(getLoanStatus(l))
+    ["Active", "Overdue"].includes(getLoanStatus(l)),
   ).length;
   const returned = processedLoans.filter(
-    (l) => getLoanStatus(l) === "Returned"
+    (l) => getLoanStatus(l) === "Returned",
   ).length;
   const lowStock = typedInventoryData.filter((i) =>
-    ["Low Stock", "Out of Stock"].includes(getStockStatus(i))
+    ["Low Stock", "Out of Stock"].includes(getStockStatus(i)),
   ).length;
 
   return (
@@ -356,6 +197,7 @@ export default function Dashboard() {
         </div>
 
         <div className="flex flex-col xl:flex-row gap-4 flex-1 min-h-0 overflow-hidden">
+          
           <div className="flex flex-col min-w-0 xl:flex-[2.5] border border-neutral-100 rounded-2xl bg-white min-h-0">
             <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-100 gap-3 shrink-0">
               <div className="flex items-center gap-4">
@@ -367,7 +209,7 @@ export default function Dashboard() {
                         setTab(t);
                         setSelectedRows([]);
                       }}
-                      className={`px-4 py-1.5 rounded-md text-xs font-medium hover:scale-103 hover:cursor-pointer transition-all duration-200 ease-in-out ${tab === t ? "bg-white shadow-sm text-neutral-800" : "text-neutral-400"}`}
+                      className={`px-4 py-1.5 font-mp rounded-md text-sm font-medium hover:scale-103 hover:cursor-pointer transition-all duration-200 ease-in-out ${tab === t ? "bg-white shadow-sm text-neutral-800" : "text-neutral-400"}`}
                     >
                       {formatText(t)}
                     </button>
@@ -375,52 +217,61 @@ export default function Dashboard() {
                 </div>
 
                 {tab === "loans" && (
-<div className="flex items-center gap-2">
-  <button
-    onClick={() => {
-      setShowReturned(!showReturned);
-      if (onlyReturned && showReturned) setOnlyReturned(false);
-    }}
-    className={`w-4 h-4 rounded-full border-2 flex-shrink-0 cursor-pointer transition-all duration-200 ${
-      showReturned ? "bg-blue-600 border-blue-600" : "bg-white border-neutral-300 hover:border-blue-500"
-    }`}
-    title="Show returned"
-  />
-  <span className="text-xs">Show returned</span>
+                  <div className="flex items-center gap-2">
+                    {returned > 0 && (
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => {
+                            setShowReturned(!showReturned);
+                            if (onlyReturned && showReturned)
+                              setOnlyReturned(false);
+                          }}
+                          className={`w-4 h-4 rounded-full border-2 flex-shrink-0 cursor-pointer transition-all duration-200 ${
+                            showReturned
+                              ? "bg-blue-600 border-blue-600"
+                              : "bg-white border-neutral-300 hover:border-blue-500"
+                          }`}
+                          title="Show returned"
+                        />
+                        <span className="text-sm font-mp">Show returned</span>
 
-  {showReturned && (
-    <>
-      <button
-        onClick={() => setOnlyReturned(!onlyReturned)}
-        className={`w-4 h-4 rounded-full border-2 flex-shrink-0 cursor-pointer transition-all duration-200 ${
-          onlyReturned ? "bg-blue-600 border-blue-600" : "bg-white border-neutral-300 hover:border-blue-500"
-        }`}
-        title="Only returned"
-      />
-      <span className="text-xs">Only returned</span>
-    </>
-  )}
-</div>
+                        {showReturned && (
+                          <>
+                            <button
+                              onClick={() => setOnlyReturned(!onlyReturned)}
+                              className={`w-4 h-4 font-mp rounded-full border-2 flex-shrink-0 cursor-pointer transition-all duration-200 ${
+                                onlyReturned
+                                  ? "bg-blue-600 border-blue-600"
+                                  : "bg-white border-neutral-300 hover:border-blue-500"
+                              }`}
+                              title="Only returned"
+                            />
+                            <span className="text-med font-mp">Only returned</span>
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 )}
 
                 <div className="flex items-center gap-0.5 bg-neutral-50 border border-neutral-100 rounded-lg p-0.5">
                   <button
                     onClick={() => setViewMode("table")}
-                    className={`p-1.5 rounded-md hover:scale-103 hover:cursor-pointer transition-all duration-200 ease-in-out ${viewMode === "table" ? "bg-white shadow-sm text-neutral-800" : "text-neutral-400"}`}
+                    className={`p-3 rounded-md hover:scale-103 hover:cursor-pointer transition-all duration-200 ease-in-out ${viewMode === "table" ? "bg-white shadow-sm text-neutral-800" : "text-neutral-400"}`}
                   >
-                    <TableIcon size={14} />
+                    <TableIcon size={18} />
                   </button>
                   <button
                     onClick={() => setViewMode("grid")}
-                    className={`p-1.5 rounded-md hover:scale-103 hover:cursor-pointer transition-all duration-200 ease-in-out ${viewMode === "grid" ? "bg-white shadow-sm text-neutral-800" : "text-neutral-400"}`}
+                    className={`p-3 rounded-md hover:scale-103 hover:cursor-pointer transition-all duration-200 ease-in-out ${viewMode === "grid" ? "bg-white shadow-sm text-neutral-800" : "text-neutral-400"}`}
                   >
-                    <LayoutGrid size={14} />
+                    <LayoutGrid size={18} />
                   </button>
                   <button
                     onClick={() => setViewMode("chart")}
-                    className={`p-1.5 rounded-md hover:scale-103 hover:cursor-pointer transition-all duration-200 ease-in-out ${viewMode === "chart" ? "bg-white shadow-sm text-neutral-800" : "text-neutral-400"}`}
+                    className={`p-3 rounded-md hover:scale-103 hover:cursor-pointer transition-all duration-200 ease-in-out ${viewMode === "chart" ? "bg-white shadow-sm text-neutral-800" : "text-neutral-400"}`}
                   >
-                    <LineChartIcon size={14} />
+                    <LineChartIcon size={18} />
                   </button>
                 </div>
               </div>
@@ -428,42 +279,41 @@ export default function Dashboard() {
               <div className="flex flex-row gap-2">
                 <button
                   onClick={() => setAddOpen(true)}
-                  className="flex items-center gap-1.5 px-4 py-2 bg-neutral-800 text-white text-[11px] rounded-lg hover:bg-neutral-700 hover:scale-103 hover:cursor-pointer transition-all duration-200 ease-in-out font-medium"
+                  className="flex items-center font-mp gap-1.5 px-4 py-2 bg-neutral-800 text-white text-[13px] rounded-lg hover:bg-neutral-700 hover:scale-103 hover:cursor-pointer transition-all duration-200 ease-in-out font-medium"
                 >
-                  <Plus size={12} />
+                  <Plus size={15} />
                   {tab === "inventory"
                     ? formatText("Add Item")
                     : formatText("Log Loan")}
                 </button>
                 <button
                   onClick={handleClear}
-                  className={`flex items-center gap-1.5 px-4 py-2 text-[11px] rounded-lg font-medium border hover:scale-103 hover:cursor-pointer transition-all duration-200 ease-in-out ${selectedRows.length > 0 ? "bg-red-50 border-red-100 text-red-600 hover:bg-red-100" : "bg-white border-neutral-200 text-neutral-500 hover:bg-neutral-50"}`}
+                  className={`flex items-center font-mp gap-1.5 px-4 py-2 text-[13px] rounded-lg font-medium border hover:scale-103 hover:cursor-pointer transition-all duration-200 ease-in-out ${selectedRows.length > 0 ? "bg-red-50 border-red-100 text-red-600 hover:bg-red-100" : "bg-white border-neutral-200 text-neutral-500 hover:bg-neutral-50"}`}
                 >
-                  <Trash2 size={12} />
+                  <Trash2 size={15} />
                   {selectedRows.length > 0
                     ? `Clear (${selectedRows.length})`
                     : "Clear All"}
                 </button>
                 <button
                   onClick={() => setAnalyticsOpen(true)}
-                  className="flex items-center gap-1.5 px-4
-                                    py-2 text-[11px] rounded-lg font-medium border hover:scale-103 hover:cursor-pointer transition-all duration-200 ease-in-out bg-white border-neutral-200 text-neutral-500 hover:bg-neutral-50"
+                  className="flex items-center gap-1.5 font-mp px-4 py-2 text-[13px] rounded-lg font-medium border hover:scale-103 hover:cursor-pointer transition-all duration-200 ease-in-out bg-white border-neutral-200 text-neutral-500 hover:bg-neutral-50"
                 >
-                  <LineChartIcon size={12} />
+                  <LineChartIcon size={15} />
                   Analytics
                 </button>
                 <button
                   onClick={() => setExportOpen(true)}
-                  className="flex items-center gap-1.5 px-4 py-2 text-[11px] rounded-lg font-medium border hover:scale-103 hover:cursor-pointer transition-all duration-200 ease-in-out bg-white border-neutral-200 text-neutral-500 hover:bg-neutral-50"
+                  className="flex items-center gap-1.5 font-mp px-4 py-2 text-[13px] rounded-lg font-medium border hover:scale-103 hover:cursor-pointer transition-all duration-200 ease-in-out bg-white border-neutral-200 text-neutral-500 hover:bg-neutral-50"
                 >
-                  <Download size={12} />
+                  <Download size={15} />
                   Export
                 </button>
                 <button
                   onClick={() => setImportOpen(true)}
-                  className="flex items-center gap-1.5 px-4 py-2 text-[11px] rounded-lg font-medium border hover:scale-103 hover:cursor-pointer transition-all duration-200 ease-in-out bg-white border-neutral-200 text-neutral-500 hover:bg-neutral-50"
+                  className="flex items-center gap-1.5 font-mp px-4 py-2 text-[13px] rounded-lg font-medium border hover:scale-103 hover:cursor-pointer transition-all duration-200 ease-in-out bg-white border-neutral-200 text-neutral-500 hover:bg-neutral-50"
                 >
-                  <UploadIcon size={12} />
+                  <UploadIcon size={15} />
                   Import
                 </button>
               </div>
@@ -492,55 +342,123 @@ export default function Dashboard() {
                       selectedRows={selectedRows}
                     />
                   ) : (
-                    <LoansChart loans={processedLoans} selectedRows={selectedRows} />
+                    <LoansChart
+                      loans={processedLoans}
+                      selectedRows={selectedRows}
+                    />
                   )}
                 </>
               )}
               {viewMode === "grid" && (
-                <div className="p-4 text-neutral-400 text-sm text-center">
-                  Grid view not implemented yet.
+                <div className="flex flex-col flex-1 gap-4 p-4 overflow-auto min-h-0">
+                  <div className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-4">
+                    {tab === "inventory" &&
+                      typedInventoryData.map((invItem) => {
+                        const status = getStockStatus(invItem);
+                        return (
+                          <DashboardCard
+                            key={invItem.id}
+                            status={status}
+                            indicatorColor={getIndicatorColor(status)}
+                            title={invItem.name}
+                            subtitle={`${
+                              invItem.item_properties?.equipment_type
+                                ? invItem.item_properties.equipment_type
+                                    .charAt(0)
+                                    .toUpperCase() +
+                                  invItem.item_properties.equipment_type.slice(1)
+                                : "—"
+                            } · ${invItem.total_stock} units`}
+                            onClick={() => {
+                              setEditData(invItem);
+                              setIsEditOpen(true);
+                            }}
+                          />
+                        );
+                      })}
+
+                    {tab === "loans" &&
+                      filteredLoans.map((loanItem) => {
+                        const status = getLoanStatus(loanItem);
+                        return (
+                          <DashboardCard
+                            key={loanItem.id}
+                            status={status}
+                            indicatorColor={getIndicatorColor(status)}
+                            title={loanItem.item_name || "Unknown"}
+                            subtitle={loanItem.display_name ?? "-"}
+                            location={loanItem.location}
+                            studentName={loanItem.student_name}
+                            onClick={() => {
+                              setEditData(loanItem);
+                              setIsEditOpen(true);
+                            }}
+                          />
+                        );
+                      })}
+                  </div>
                 </div>
               )}
             </div>
           </div>
-        </div>
+
+          <div className="xl:flex-[1] min-w-0 flex flex-col gap-4">
+            <div className="flex-1 border border-neutral-100 rounded-2xl bg-white flex flex-col overflow-hidden">
+              <div className="px-5 py-4 border-b border-neutral-100 flex items-center gap-2 shrink-0">
+                <History size={15} className="text-neutral-400" />
+                <h3 className=" font-mp text-med font-semibold text-neutral-800">
+                  {formatText("Recent Activity")}
+                </h3>
+              </div>
+              <ActivityFeed />
+            </div>
+          </div>
+
+        </div> 
       </div>
 
       <AnimatePresence>
         {isExportOpen && (
-
-        <ExportDialog
-          key={`export-${tab}`}
-          isOpen={isExportOpen}
-          onClose={() => setExportOpen(false)}
-          initialTableType={tab === "inventory" ? "Stock" : "Loans"}
-          fixedTableType={true}
-          hasSelectedRows={selectedRows.length > 0}
-          selectedRows={selectedRows}
-        />
+          <ExportDialog
+            key={`export-${tab}`}
+            isOpen={isExportOpen}
+            onClose={() => setExportOpen(false)}
+            initialTableType={tab === "inventory" ? "Stock" : "Loans"}
+            fixedTableType={true}
+            hasSelectedRows={selectedRows.length > 0}
+            selectedRows={selectedRows}
+          />
         )}
         {isImportOpen && (
-        <ImportDialog
-          key={tab}
-          isOpen={isImportOpen}
-          onClose={() => setImportOpen(false)}
-          initialTableType={tab === "inventory" ? "Stock" : "Loans"}
-          fixedTableType={true}
-        />
+          <ImportDialog
+            key={tab}
+            isOpen={isImportOpen}
+            onClose={() => setImportOpen(false)}
+            initialTableType={tab === "inventory" ? "Stock" : "Loans"}
+            fixedTableType={true}
+          />
         )}
         {isAddOpen && (
-        <AddDialog
-          key={`edit-${editData?.id}`}
-          isOpen={isAddOpen}
-          onClose={() => {
-            setIsEditOpen(false);
-            setEditData(null);
-            setAddOpen(false);
-          }}
-          initialTableType={tab === "inventory" ? "Stock" : "Loans"}
-          fixedTableType={true}
-          editData={editData ?? undefined}
-        />
+          <AddDialog
+            key={tab}
+            isOpen={isAddOpen}
+            onClose={() => setAddOpen(false)}
+            initialTableType={tab === "inventory" ? "Stock" : "Loans"}
+            fixedTableType={true}
+          />
+        )}
+        {isEditOpen && (
+          <AddDialog
+            key={`edit-${editData?.id}`}
+            isOpen={isEditOpen}
+            onClose={() => {
+              setIsEditOpen(false);
+              setEditData(null);
+            }}
+            initialTableType={tab === "inventory" ? "Stock" : "Loans"}
+            fixedTableType={true}
+            editData={editData ?? undefined}
+          />
         )}
         {isAnalyticsOpen && (
           <AnalyticsDialog

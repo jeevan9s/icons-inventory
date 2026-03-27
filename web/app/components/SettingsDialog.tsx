@@ -5,7 +5,7 @@ import { useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Users, Package, Plus, Trash2, Pencil, Check, X, Save } from "lucide-react";
+import { Users, Package, Plus, Trash2, Pencil, Check, X } from "lucide-react";
 import { useGetRows, useUpdateRow, useCreateRow, useDeleteRow } from "@/services/lib/hooks/useDatabase";
 import { useUser } from "@/services/lib/hooks/useAuth";
 import { toast } from "sonner";
@@ -223,7 +223,6 @@ export default function SettingsDialog({ isOpen, onClose }: Props) {
                   disabled={!hasPendingRoles || isSavingRoles}
                   className="cursor-pointer w-full h-9 text-xs gap-1.5 bg-neutral-900 hover:bg-neutral-700 hover:scale-103 transition-all"
                 >
-                  <Save size={12} />
                   {isSavingRoles ? "Saving..." : hasPendingRoles ? `Save ${Object.keys(pendingRoles).length} change${Object.keys(pendingRoles).length > 1 ? "s" : ""}` : "No changes"}
                 </Button>
               </div>

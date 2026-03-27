@@ -26,15 +26,31 @@ import { motion } from "framer-motion";
 import { getLoanStatus } from "@/services/lib/hooks/helpers";
 import { format } from "date-fns";
 import { LoanRow } from "@/services/lib/types";
-import { enrichData, formatCapitalized, loanFetcher } from "@/services/lib/helpers";
-import { useUpdateRow, useReturnToggle, useUpdateLoanQuantity, useGetRows, useDeleteLoan } from "@/services/lib/hooks/useDatabase";
+import {
+  enrichData,
+  formatCapitalized,
+  loanFetcher,
+} from "@/services/lib/helpers";
+import {
+  useUpdateRow,
+  useReturnToggle,
+  useUpdateLoanQuantity,
+  useGetRows,
+  useDeleteLoan,
+} from "@/services/lib/hooks/useDatabase";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import RowActionsMenu from "./RowActionsMenu";
 import AddDialog from "./AddDialog";
 import { getUserInfo } from "@/services/auth/authCallers";
+import { getDataFiltered } from "@/services/lib/database-functions/databaseHelpers";
 
-const LOAN_READONLY_FIELDS = ["equipment_type", "display_name", "status", "item_status"];
+const LOAN_READONLY_FIELDS = [
+  "equipment_type",
+  "display_name",
+  "status",
+  "item_status",
+];
 
 interface EditableCellProps {
   value: string;
@@ -97,7 +113,10 @@ interface LoansTableProps {
   onSelectionChange?: (rows: LoanRow[]) => void;
 }
 
-export default function LoansTable({ data, onSelectionChange }: LoansTableProps) {
+export default function LoansTable({
+  data,
+  onSelectionChange,
+}: LoansTableProps) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
   const [rowSelection, setRowSelection] = useState({});
@@ -108,11 +127,15 @@ export default function LoansTable({ data, onSelectionChange }: LoansTableProps)
 
   const updateLoan = useUpdateRow("Loans");
   const updateLoanRef = useRef(updateLoan);
-  useEffect(() => { updateLoanRef.current = updateLoan; }, [updateLoan]);
+  useEffect(() => {
+    updateLoanRef.current = updateLoan;
+  }, [updateLoan]);
 
   const updateStock = useUpdateRow("Stock");
   const updateStockRef = useRef(updateStock);
-  useEffect(() => { updateStockRef.current = updateStock; }, [updateStock]);
+  useEffect(() => {
+    updateStockRef.current = updateStock;
+  }, [updateStock]);
 
   const returnToggle = useReturnToggle();
   const updateLoanQuantity = useUpdateLoanQuantity();
@@ -121,15 +144,18 @@ export default function LoansTable({ data, onSelectionChange }: LoansTableProps)
 
   const { data: stockRows = [] } = useGetRows("Stock");
 
-  const customTypes = typeof window !== "undefined"
-    ? JSON.parse(localStorage.getItem("custom_equipment_types") ?? "[]")
-    : [];
+  const customTypes =
+    typeof window !== "undefined"
+      ? JSON.parse(localStorage.getItem("custom_equipment_types") ?? "[]")
+      : [];
 
   const equipmentTypes = Array.from(
     new Set([
-      ...(stockRows as any[]).map((r) => r.item_properties?.equipment_type).filter(Boolean),
+      ...(stockRows as any[])
+        .map((r) => r.item_properties?.equipment_type)
+        .filter(Boolean),
       ...customTypes,
-    ])
+    ]),
   ) as string[];
 
   useEffect(() => {
@@ -141,7 +167,9 @@ export default function LoansTable({ data, onSelectionChange }: LoansTableProps)
     enrichData(data, loanFetcher).then((result) => {
       if (active) setLocalData(result as LoanRow[]);
     });
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, [data, refreshKey]);
 
   const handleDelete = async (id: number) => {
@@ -170,13 +198,24 @@ export default function LoansTable({ data, onSelectionChange }: LoansTableProps)
       const row = localData.find((r) => r.id.toString() === id);
 
       if (columnId === "item_name") {
-        if (!row?.item_id) { toast.error("Cannot update item name: stock item not found"); return; }
-        const stockItem = (stockRows as any[]).find((s) => s.id === row.item_id);
-        if (!stockItem) { toast.error("Stock item not found"); return; }
+        if (!row?.item_id) {
+          toast.error("Cannot update item name: stock item not found");
+          return;
+        }
+        const stockItem = (stockRows as any[]).find(
+          (s) => s.id === row.item_id,
+        );
+        if (!stockItem) {
+          toast.error("Stock item not found");
+          return;
+        }
         updateStockRef.current.mutate(
           { id: row.item_id, data: { name: value } },
           {
-            onSuccess: () => { toast.success("Item name updated"); setRefreshKey((k) => k + 1); },
+            onSuccess: () => {
+              toast.success("Item name updated");
+              setRefreshKey((k) => k + 1);
+            },
             onError: () => toast.error("Failed to update item name"),
           },
         );
@@ -184,7 +223,10 @@ export default function LoansTable({ data, onSelectionChange }: LoansTableProps)
       }
 
       if (columnId === "item_quantity") {
-        if (!row?.loan_item_id || !row?.item_id) { toast.error("Cannot update quantity: loan item not found"); return; }
+        if (!row?.loan_item_id || !row?.item_id) {
+          toast.error("Cannot update quantity: loan item not found");
+          return;
+        }
         updateLoanQuantity.mutate(
           {
             loanItemId: row.loan_item_id,
@@ -193,7 +235,10 @@ export default function LoansTable({ data, onSelectionChange }: LoansTableProps)
             itemId: row.item_id,
           },
           {
-            onSuccess: () => { toast.success("Quantity updated"); setRefreshKey((k) => k + 1); },
+            onSuccess: () => {
+              toast.success("Quantity updated");
+              setRefreshKey((k) => k + 1);
+            },
             onError: () => toast.error("Failed to update quantity"),
           },
         );
@@ -201,16 +246,32 @@ export default function LoansTable({ data, onSelectionChange }: LoansTableProps)
       }
 
       if (columnId === "equipment_type") {
-        if (!row?.item_id) { toast.error("Cannot update type: stock item not found"); return; }
-        const stockItem = (stockRows as any[]).find((s) => s.id === row.item_id);
-        if (!stockItem) { toast.error("Stock item not found"); return; }
+        if (!row?.item_id) {
+          toast.error("Cannot update type: stock item not found");
+          return;
+        }
+        const stockItem = (stockRows as any[]).find(
+          (s) => s.id === row.item_id,
+        );
+        if (!stockItem) {
+          toast.error("Stock item not found");
+          return;
+        }
         updateStockRef.current.mutate(
           {
             id: row.item_id,
-            data: { item_properties: { ...stockItem.item_properties, equipment_type: value } },
+            data: {
+              item_properties: {
+                ...stockItem.item_properties,
+                equipment_type: value,
+              },
+            },
           },
           {
-            onSuccess: () => { toast.success("Type updated"); setRefreshKey((k) => k + 1); },
+            onSuccess: () => {
+              toast.success("Type updated");
+              setRefreshKey((k) => k + 1);
+            },
             onError: () => toast.error("Failed to update type"),
           },
         );
@@ -236,7 +297,9 @@ export default function LoansTable({ data, onSelectionChange }: LoansTableProps)
         { id: row.id, time_in: row.time_in ?? null },
         {
           onSuccess: () => {
-            toast.success(row.time_in ? "Check-in removed" : "Item returned successfully");
+            toast.success(
+              row.time_in ? "Check-in removed" : "Item returned successfully",
+            );
             router.refresh();
           },
           onError: () => toast.error("Failed to update loan status"),
@@ -252,8 +315,13 @@ export default function LoansTable({ data, onSelectionChange }: LoansTableProps)
         id: "select",
         header: ({ table }) => (
           <Checkbox
-            checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
-            onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+            checked={
+              table.getIsAllPageRowsSelected() ||
+              (table.getIsSomePageRowsSelected() && "indeterminate")
+            }
+            onCheckedChange={(value) =>
+              table.toggleAllPageRowsSelected(!!value)
+            }
             className="translate-y-[2px] border-neutral-300"
           />
         ),
@@ -275,7 +343,10 @@ export default function LoansTable({ data, onSelectionChange }: LoansTableProps)
             <div className="flex items-center justify-center">
               <button
                 title={isReturned ? "Remove check-in" : "Check-in loan"}
-                onClick={(e) => { e.stopPropagation(); handleReturnToggle(row.original); }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleReturnToggle(row.original);
+                }}
                 className={`p-2 rounded-lg transition-all duration-200 hover:cursor-pointer ${isReturned ? "text-green-500 bg-green-50 hover:bg-green-100" : "text-neutral-400 hover:text-blue-600 hover:bg-blue-50"}`}
               >
                 {isReturned ? <CheckCircle2 size={15} /> : <Circle size={15} />}
@@ -288,38 +359,109 @@ export default function LoansTable({ data, onSelectionChange }: LoansTableProps)
       {
         accessorKey: "item_name",
         header: ({ column }) => (
-          <ColHeader label="Item" type="text" isSorted={column.getIsSorted()} onSort={column.getToggleSortingHandler()!} />
+          <ColHeader
+            label="Item"
+            type="text"
+            isSorted={column.getIsSorted()}
+            onSort={column.getToggleSortingHandler()!}
+          />
         ),
         cell: ({ getValue, row, column }) => (
-          <EditableCell value={(getValue() as string) || "—"} rowId={row.original.id.toString()} columnId={column.id} updateData={handleUpdate} />
+          <EditableCell
+            value={(getValue() as string) || "—"}
+            rowId={row.original.id.toString()}
+            columnId={column.id}
+            updateData={async (rowId, columnId, newValue) => {
+              const results = await getDataFiltered(
+                "Stock",
+                "name",
+                "ilike",
+                `%${newValue.trim()}%`,
+              );
+              if (!results || results.length === 0) {
+                toast.error(`"${newValue}" not found in inventory.`);
+                return;
+              }
+              handleUpdate(rowId, columnId, newValue);
+            }}
+          />
         ),
       },
       {
         accessorKey: "item_quantity",
         header: ({ column }) => (
-          <ColHeader label="Qty" type="int" isSorted={column.getIsSorted()} onSort={column.getToggleSortingHandler()!} />
+          <ColHeader
+            label="Qty"
+            type="int"
+            isSorted={column.getIsSorted()}
+            onSort={column.getToggleSortingHandler()!}
+          />
         ),
         cell: ({ getValue, row, column }) => (
-          <EditableCell value={String(getValue() ?? "1")} rowId={row.original.id.toString()} columnId={column.id} updateData={handleUpdate} />
+          <EditableCell
+            value={String(getValue() ?? "1")}
+            rowId={row.original.id.toString()}
+            columnId={column.id}
+            updateData={handleUpdate}
+          />
         ),
         size: 60,
       },
       {
         accessorKey: "equipment_type",
         header: ({ column }) => (
-          <ColHeader label="Equipment Type" type="text" isSorted={column.getIsSorted()} onSort={column.getToggleSortingHandler()!} />
+          <ColHeader
+            label="Equipment Type"
+            type="text"
+            isSorted={column.getIsSorted()}
+            onSort={column.getToggleSortingHandler()!}
+          />
         ),
         cell: ({ getValue, row }) => {
           const current = getValue() as string;
           return (
             <select
               value={current || ""}
-              onChange={(e) => handleUpdate(row.original.id.toString(), "equipment_type", e.target.value)}
+              onChange={async (e) => {
+                const newType = e.target.value;
+                const itemName = row.original.item_name;
+
+                const results = await getDataFiltered(
+                  "Stock",
+                  "name",
+                  "ilike",
+                  `%${itemName.trim()}%`,
+                );
+                const stockMatch = newType
+                  ? (results as any[]).filter(
+                      (r) => r.item_properties?.equipment_type === newType,
+                    )
+                  : (results as any[]);
+
+                if (!stockMatch || stockMatch.length === 0) {
+                  toast.error(
+                    `"${itemName}" with type "${newType}" not found in inventory.`,
+                  );
+                  return;
+                }
+
+                handleUpdate(
+                  row.original.id.toString(),
+                  "equipment_type",
+                  newType,
+                );
+              }}
               className="w-full h-7 text-sm border-none bg-transparent text-neutral-600 font-mp focus:outline-none focus:ring-1 focus:ring-blue-400 rounded px-2 capitalize cursor-pointer"
             >
               <option value="">—</option>
               {equipmentTypes.map((type) => (
-                <option key={type} value={type} className="capitalize font-mp text-sm">{type}</option>
+                <option
+                  key={type}
+                  value={type}
+                  className="capitalize font-mp text-sm"
+                >
+                  {type}
+                </option>
               ))}
             </select>
           );
@@ -328,64 +470,124 @@ export default function LoansTable({ data, onSelectionChange }: LoansTableProps)
       {
         accessorKey: "student_name",
         header: ({ column }) => (
-          <ColHeader label="Student Name" type="text" isSorted={column.getIsSorted()} onSort={column.getToggleSortingHandler()!} />
+          <ColHeader
+            label="Student Name"
+            type="text"
+            isSorted={column.getIsSorted()}
+            onSort={column.getToggleSortingHandler()!}
+          />
         ),
         cell: ({ getValue, row, column }) => (
-          <EditableCell value={formatCapitalized(getValue() as string) || "—"} rowId={row.original.id.toString()} columnId={column.id} updateData={handleUpdate} />
+          <EditableCell
+            value={formatCapitalized(getValue() as string) || "—"}
+            rowId={row.original.id.toString()}
+            columnId={column.id}
+            updateData={handleUpdate}
+          />
         ),
       },
       {
         accessorKey: "student_number",
         header: ({ column }) => (
-          <ColHeader label="Student ID" type="text" isSorted={column.getIsSorted()} onSort={column.getToggleSortingHandler()!} />
+          <ColHeader
+            label="Student ID"
+            type="number"
+            isSorted={column.getIsSorted()}
+            onSort={column.getToggleSortingHandler()!}
+          />
         ),
         cell: ({ getValue, row, column }) => (
-          <EditableCell value={(getValue() as string) || ""} rowId={row.original.id.toString()} columnId={column.id} updateData={handleUpdate} />
+          <EditableCell
+            value={(getValue() as string) || ""}
+            rowId={row.original.id.toString()}
+            columnId={column.id}
+            updateData={handleUpdate}
+          />
         ),
       },
       {
         accessorKey: "location",
         header: ({ column }) => (
-          <ColHeader label="Location" type="text" isSorted={column.getIsSorted()} onSort={column.getToggleSortingHandler()!} />
+          <ColHeader
+            label="Location"
+            type="text"
+            isSorted={column.getIsSorted()}
+            onSort={column.getToggleSortingHandler()!}
+          />
         ),
         cell: ({ getValue, row, column }) => (
-          <EditableCell value={(getValue() as string) || ""} rowId={row.original.id.toString()} columnId={column.id} updateData={handleUpdate} />
+          <EditableCell
+            value={(getValue() as string) || ""}
+            rowId={row.original.id.toString()}
+            columnId={column.id}
+            updateData={handleUpdate}
+          />
         ),
       },
       {
         accessorKey: "status",
         header: ({ column }) => (
-          <ColHeader label="Status" type="text" isSorted={column.getIsSorted()} onSort={column.getToggleSortingHandler()!} />
+          <ColHeader
+            label="Status"
+            type="text"
+            isSorted={column.getIsSorted()}
+            onSort={column.getToggleSortingHandler()!}
+          />
         ),
         cell: ({ row }) => <StatusBadge status={getLoanStatus(row.original)} />,
       },
       {
         accessorKey: "display_name",
         header: ({ column }) => (
-          <ColHeader label="Signee" type="text" isSorted={column.getIsSorted()} onSort={column.getToggleSortingHandler()!} />
+          <ColHeader
+            label="Signee"
+            type="text"
+            isSorted={column.getIsSorted()}
+            onSort={column.getToggleSortingHandler()!}
+          />
         ),
         cell: ({ getValue }) => (
-          <span className="text-neutral-600 font-mp px-2">{formatCapitalized(getValue() as string)}</span>
+          <span className="text-neutral-600 font-mp px-2">
+            {formatCapitalized(getValue() as string)}
+          </span>
         ),
       },
       {
         accessorKey: "time_out",
         header: ({ column }) => (
-          <ColHeader label="Time Loaned" type="timestamp" isSorted={column.getIsSorted()} onSort={column.getToggleSortingHandler()!} />
+          <ColHeader
+            label="Time Loaned"
+            type="timestamp"
+            isSorted={column.getIsSorted()}
+            onSort={column.getToggleSortingHandler()!}
+          />
         ),
         cell: ({ getValue }) => {
           const date = getValue() as string;
-          return <span className="font-mono text-xs font-mp text-neutral-400 px-2">{date ? format(new Date(date), "MMM d, h:mm b") : "—"}</span>;
+          return (
+            <span className="font-mono  font-mp text-neutral-400 px-2">
+              {date ? format(new Date(date), "MMM d, h:mm b") : "—"}
+            </span>
+          );
         },
       },
       {
         accessorKey: "time_in",
         header: ({ column }) => (
-          <ColHeader label="Time Returned" type="timestamp" isSorted={column.getIsSorted()} onSort={column.getToggleSortingHandler()!} />
+          <ColHeader
+            label="Time Returned"
+            type="timestamp"
+            isSorted={column.getIsSorted()}
+            onSort={column.getToggleSortingHandler()!}
+          />
         ),
         cell: ({ getValue }) => {
           const date = getValue() as string;
-          return <span className="font-mono text-xs font-mp text-neutral-400 px-2">{date ? format(new Date(date), "MMM d, h:mm b") : "—"}</span>;
+          return (
+            <span className="font-mono font-mp text-neutral-400 px-2">
+              {date ? format(new Date(date), "MMM d, h:mm b") : "—"}
+            </span>
+          );
         },
       },
       {
@@ -394,7 +596,10 @@ export default function LoansTable({ data, onSelectionChange }: LoansTableProps)
         cell: ({ row }) => (
           <RowActionsMenu
             itemName={row.original.item_name}
-            onEdit={() => { setEditData(row.original); setIsEditOpen(true); }}
+            onEdit={() => {
+              setEditData(row.original);
+              setIsEditOpen(true);
+            }}
             onDelete={() => handleDelete(row.original.id)}
           />
         ),
@@ -418,7 +623,9 @@ export default function LoansTable({ data, onSelectionChange }: LoansTableProps)
 
   useEffect(() => {
     if (onSelectionChange) {
-      const selectedData = table.getSelectedRowModel().rows.map((row) => row.original);
+      const selectedData = table
+        .getSelectedRowModel()
+        .rows.map((row) => row.original);
       onSelectionChange(selectedData);
     }
   }, [rowSelection]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -442,7 +649,9 @@ export default function LoansTable({ data, onSelectionChange }: LoansTableProps)
             </span>
             <button
               onClick={() => {
-                table.getSelectedRowModel().rows.forEach((row) => handleDelete(row.original.id));
+                table
+                  .getSelectedRowModel()
+                  .rows.forEach((row) => handleDelete(row.original.id));
                 setRowSelection({});
               }}
               className="text-[12px] text-neutral-400 hover:text-neutral-600 underline decoration-neutral-200"
@@ -458,8 +667,15 @@ export default function LoansTable({ data, onSelectionChange }: LoansTableProps)
             {table.getHeaderGroups().map((hg) => (
               <TableRow key={hg.id} className="border-neutral-100">
                 {hg.headers.map((header) => (
-                  <TableHead key={header.id} className="bg-neutral-50 px-4 py-2.5 font-mp" style={{ width: header.getSize() }}>
-                    {flexRender(header.column.columnDef.header, header.getContext())}
+                  <TableHead
+                    key={header.id}
+                    className="bg-neutral-50 px-4 py-2.5 font-mp"
+                    style={{ width: header.getSize() }}
+                  >
+                    {flexRender(
+                      header.column.columnDef.header,
+                      header.getContext(),
+                    )}
                   </TableHead>
                 ))}
               </TableRow>
@@ -476,15 +692,24 @@ export default function LoansTable({ data, onSelectionChange }: LoansTableProps)
                   className={`border-b border-neutral-50 ${row.getIsSelected() ? "bg-neutral-50" : "hover:bg-neutral-50/50"}`}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className="px-4 py-2.5 text-sm font-mp">
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    <TableCell
+                      key={cell.id}
+                      className="px-4 py-2.5 text-sm font-mp"
+                    >
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext(),
+                      )}
                     </TableCell>
                   ))}
                 </motion.tr>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className="text-center text-neutral-400 py-12 text-sm font-mp">
+                <TableCell
+                  colSpan={columns.length}
+                  className="text-center text-neutral-400 py-12 text-sm font-mp"
+                >
                   No loans found.
                 </TableCell>
               </TableRow>
@@ -495,7 +720,10 @@ export default function LoansTable({ data, onSelectionChange }: LoansTableProps)
 
       <AddDialog
         isOpen={isEditOpen}
-        onClose={() => { setIsEditOpen(false); setEditData(null); }}
+        onClose={() => {
+          setIsEditOpen(false);
+          setEditData(null);
+        }}
         initialTableType="Loans"
         fixedTableType={true}
         editData={editData ?? undefined}

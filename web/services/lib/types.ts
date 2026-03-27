@@ -1,7 +1,7 @@
 // types for component-usage
 
 export type LoanRow = {
-  id: number;
+  id: number | null;
   signee: string;
   student_name?: string | null;
   student_number: number;
@@ -68,3 +68,14 @@ export type Role = "Admin" | "Dev" | "Operator" | "NULL";
 export type Section = "users" | "equipment";
 
 export const ROLES: Role[] = ["Admin", "Dev", "Operator"];
+
+export type UnifiedActivityItem = {
+  id: string;
+  type: string;
+  date: Date;
+  status: string;
+  action: string;
+  display_name: string;
+  item_name: string;
+  student_name: string;
+};

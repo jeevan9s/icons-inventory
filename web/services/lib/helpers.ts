@@ -155,41 +155,42 @@ export const getIndicatorColor = (status: string) => {
   }
 };
 
-export const getUnifiedActivity = (loans: LoanRow[]): ActivityItem[] => {
+export const getUnifiedActivity = (
+  loans: LoanRow[],
+  seenAt: Record<string, number> = {}
+) => {
   const activities: ActivityItem[] = [];
 
   loans.forEach((l) => {
-    const timeOutDate = parseISO(l.time_out);
+    const seenOut = seenAt[`${l.id}-out`] ?? 0;
+    const seenIn = seenAt[`${l.id}-in`] ?? 0;
 
     activities.push({
       id: `${l.id}-out`,
       type: "loan",
-      date: timeOutDate,
+      date: new Date(seenOut),
       status: "Active",
-      item_name: formatCapitalized(l.item_name || "Unknown Item"),
-      student_name: formatCapitalized(l.student_name || "Unknown Student"),
-      display_name: formatCapitalized(l.display_name || "Staff"),
+      item_name: l.item_name || "Unknown Item",
+      student_name: l.student_name || "Unknown Student",
+      display_name: l.display_name || "Staff",
       action: "logged",
     });
 
-    if (l.time_in) {
-      const timeInDate = parseISO(l.time_in);
-
+    if (l.time_in && seenIn > 0) {
       activities.push({
         id: `${l.id}-in`,
         type: "loan",
-        date: timeInDate,
+        date: new Date(seenIn),
         status: "Returned",
-        item_name: formatCapitalized(l.item_name || "Unknown Item"),
-        student_name: formatCapitalized(l.student_name || "Unknown Student"),
-        display_name: formatCapitalized(l.display_name || "Staff"),
+        item_name: l.item_name || "Unknown Item",
+        student_name: l.student_name || "Unknown Student",
+        display_name: l.display_name || "Staff",
         action: "completed",
       });
     }
   });
 
   return activities
-    .filter((item) => !isNaN(item.date.getTime()))
-    .sort((a, b) => b.date.getTime() - a.date.getTime())
-    .slice(0, 20);
+    .filter((item) => !isNaN(item.date.getTime()) && item.date.getTime() > 0)
+    .sort((a, b) => b.date.getTime() - a.date.getTime());
 };

@@ -26,7 +26,7 @@ export default function SignOutPage() {
             </h1>
 
             <h3 className="text-black/80 font-med font-mp text-base sm:text-lg md:text-xl lg:text-2xl">
-              You will now be redirected to the main dashboard.
+              You will now be redirected to the landing page.
             </h3>
           </div>
         </div>

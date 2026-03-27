@@ -18,14 +18,14 @@ import Papa from "papaparse"
 // mutate -> update, create, and delete data
 
 // fetch all database rows
-export const useGetRows = (tableName: TableName) => {
-  return useQuery({
+export const useGetRows = <T>(tableName: TableName) => {
+  return useQuery<T[]>({
     queryKey: [tableName],
     queryFn: async () => {
       const data = await getData(tableName, "id", true);
-      console.log(`received: ${tableName} (${data?.length || 0} rows)`);
       return data || [];
     },
+    refetchInterval: 5000,
   });
 };
 
