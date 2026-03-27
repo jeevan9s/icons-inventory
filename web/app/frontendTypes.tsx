@@ -9,7 +9,8 @@ const statusColors: Record<string, string> = {
   'Out of Stock': 'bg-red-100 text-red-700',
   'Returned':     'bg-green-100 text-green-700',
   'Checked Out':  'bg-blue-100 text-blue-700',
-  'Overdue' : 'bg-red-100 text-red-700'
+  'Overdue' : 'bg-red-100 text-red-700',
+  'Active' : 'bg-blue-100 text-blue-700'
 }
 
 export const addDialogTitles = {

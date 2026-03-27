@@ -30,17 +30,12 @@ export const useGetRows = (tableName: TableName) => {
 };
 
 // delete a row from a table
-export const useDeleteRow = (tableName: TableName) => {
-  const queryClient = useQueryClient()
-
+export const useDeleteRow = <
+  T extends keyof Database["public"]["Tables"]
+>(table: T) => {
   return useMutation({
-    mutationFn: (id: number) => deleteById(tableName, id),
-    onSuccess: (_, id) => {
-      queryClient.invalidateQueries({ queryKey: [tableName] });
-      console.log(`deleted ${tableName} item #`, id);
-    },
-    onError: (error: Error) => {
-      console.error(`deletion failed:`, error.message);
+    mutationFn: async (id: Database["public"]["Tables"][T]["Row"]["id"]) => {
+      return await deleteById(table, id);
     },
   });
 };
@@ -237,6 +232,24 @@ export const useRowInsert = <
       return result;
     },
   });
+};
+
+export const useCreateRow = <
+  T extends keyof Database["public"]["Tables"],
+>(table: T) => {
+  const mutation = useRowInsert<T>();
+
+  return {
+    ...mutation,
+    mutateAsync: (params: {
+      data: Database["public"]["Tables"][T]["Insert"];
+    }) => {
+      return mutation.mutateAsync({
+        table,
+        data: params.data,
+      });
+    },
+  };
 };
 
 // import a CSV to populate a table

@@ -483,7 +483,7 @@ export default function AddDialog({ isOpen, onClose, initialTableType, fixedTabl
               {isEditMode && (
                 <div className="space-y-2">
                   <Label className="text-[10px] uppercase font-bold text-neutral-500">Available</Label>
-                  <Input name="net_stock" type="number" min="0" defaultValue={stockEditData?.net_stock ?? ""} required />
+                  <Input name="net_stock" type="number" min="0" defaultValue={stockEditData?.net_stock ?? ""} />
                 </div>
               )}
               <Button type="submit" disabled={insertRow.isPending || updateStockRow.isPending} className="w-full hover:scale-105 transition-all hover:cursor-pointer duration-200 bg-neutral-900">

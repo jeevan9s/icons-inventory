@@ -145,13 +145,12 @@ export const deEnrichRow = async (tableName: string, row: any) => {
   return cleanRow;
 };
 
-
 export const getIndicatorColor = (status: string) => {
   switch (status) {
     case 'Available': case 'In Stock': return 'bg-green-400';
     case 'Returned': return 'bg-neutral-400';
     case 'Overdue': case 'Out of Stock': return 'bg-red-400';
-    case 'Active': return 'bg-blue-400';
+    case 'Active': return 'bg-blue-400 text-blue-400';
     default: return 'bg-amber-400';
   }
 };
