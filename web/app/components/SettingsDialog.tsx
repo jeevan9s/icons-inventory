@@ -10,6 +10,7 @@ import { useGetRows, useUpdateRow, useCreateRow, useDeleteRow } from "@/services
 import { useUser } from "@/services/lib/hooks/useAuth";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
+import { normalizeEqType } from "@/services/lib/helpers";
 
 type Props = {
   isOpen: boolean;
@@ -74,7 +75,7 @@ export default function SettingsDialog({ isOpen, onClose }: Props) {
   };
 
   const handleAddType = () => {
-    const trimmed = newType.trim().toLowerCase();
+    const trimmed = normalizeEqType(newType)
     if (!trimmed) return;
     if (equipmentTypes.includes(trimmed)) { toast.error("Type already exists"); return; }
     const updated = [...customTypes, trimmed];
@@ -96,17 +97,17 @@ export default function SettingsDialog({ isOpen, onClose }: Props) {
   };
 
   const handleRenameType = async (oldType: string) => {
-    const trimmed = editingValue.trim().toLowerCase();
+    const trimmed = normalizeEqType(editingValue);
     if (!trimmed || trimmed === oldType) { setEditingType(null); return; }
 
-    const affected = (stockRows as any[]).filter((r) => r.item_properties?.equipment_type === oldType);
+    const affected = (stockRows as any[]).filter((r) => normalizeEqType(r.item_properties?.equipment_type) === normalizeEqType(oldType));
 
     try {
       await Promise.all(
         affected.map((row) =>
           updateStock.mutateAsync({
             id: row.id,
-            data: { item_properties: { ...row.item_properties, equipment_type: trimmed } },
+            data: { item_properties: { ...row.item_properties, equipment_type: normalizeEqType(trimmed) } },
           })
         )
       );

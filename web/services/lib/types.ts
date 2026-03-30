@@ -79,3 +79,10 @@ export type UnifiedActivityItem = {
   item_name: string;
   student_name: string;
 };
+
+export type LoanTrendMode = "hourly" | "daily";  
+
+export interface LoanTrendOptions {
+  mode?: LoanTrendMode;
+  normalize?: boolean; // default false
+}

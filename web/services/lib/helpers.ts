@@ -194,3 +194,25 @@ export const getUnifiedActivity = (
     .filter((item) => !isNaN(item.date.getTime()) && item.date.getTime() > 0)
     .sort((a, b) => b.date.getTime() - a.date.getTime());
 };
+
+// category normalization
+export function normalizeEqType(eqType?: string): string {
+  if (!eqType) return "misc";
+  return eqType.trim().toLowerCase();
+}
+
+// time bounds for chart visualization
+export function getTimeBounds(loans: LoanRow[], selection?: LoanRow[]): { start: Date; end: Date } {
+  const data = selection?.length ? selection : loans;
+  if (!data.length) return { start: new Date(0), end: new Date() }; // fallback
+
+  const times = data
+    .map((loan) => loan.time_out)
+    .filter(Boolean)
+    .map((t) => new Date(t as string).getTime());
+
+  const start = new Date(Math.min(...times));
+  const end = new Date(Math.max(...times));
+
+  return { start, end };
+}

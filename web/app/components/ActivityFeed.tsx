@@ -16,7 +16,7 @@ export default function ActivityFeed() {
         <div className="px-4 py-2 border-b border-neutral-50 flex justify-end shrink-0">
           <button
             onClick={() => clear?.()}
-            className="flex items-center gap-1 text-[13px] font-mp font-semibold tracking-tight text-neutral-400 hover:text-red-600 transition-colors duration-200 cursor-pointer"
+            className="flex items-center gap-1 text-[13px] font-mp font-semibold tracking-tight text-neutral-400 hover:text-red-800 hover:scale-103 transition-all duration-200 cursor-pointer"
           >
             <Trash2 size={12} />
             Clear Feed
@@ -51,7 +51,7 @@ export default function ActivityFeed() {
                 <div className="flex items-center gap-1.5 mt-1 text-neutral-400">
                   <Clock size={10} />
                   <span className="text-[9px] font-medium uppercase tracking-wider">
-                    {format(new Date(item.date.getTime() - (4 * 60 * 60 * 1000)), "h:mm aa")}
+                    {format(new Date(item.date.getTime()), "h:mm aa")}
                   </span>
                 </div>
               </div>

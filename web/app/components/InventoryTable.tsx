@@ -31,7 +31,7 @@ import {
   useDeleteRow,
 } from "@/services/lib/hooks/useDatabase";
 import { toast } from "sonner";
-import { formatCapitalized } from "@/services/lib/helpers";
+import { formatCapitalized, normalizeEqType } from "@/services/lib/helpers";
 import RowActionsMenu from "./RowActionsMenu";
 import AddDialog from "./AddDialog";
 import { getUserInfo } from "@/services/auth/authCallers";
@@ -168,7 +168,7 @@ export default function InventoryTable({
             data: {
               item_properties: {
                 ...row?.item_properties,
-                equipment_type: value,
+                equipment_type: normalizeEqType(value),
               },
             },
           },

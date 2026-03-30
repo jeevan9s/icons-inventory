@@ -44,6 +44,7 @@ import RowActionsMenu from "./RowActionsMenu";
 import AddDialog from "./AddDialog";
 import { getUserInfo } from "@/services/auth/authCallers";
 import { getDataFiltered } from "@/services/lib/database-functions/databaseHelpers";
+import { normalizeEqType } from "@/services/lib/helpers";
 
 const LOAN_READONLY_FIELDS = [
   "equipment_type",
@@ -263,7 +264,7 @@ export default function LoansTable({
             data: {
               item_properties: {
                 ...stockItem.item_properties,
-                equipment_type: value,
+                equipment_type: normalizeEqType(value),
               },
             },
           },

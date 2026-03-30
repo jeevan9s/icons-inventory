@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useCallback } from "react";
 import dynamic from "next/dynamic";
 import Layout from "@/app/components/Layout";
 import {
@@ -16,7 +16,7 @@ import {
   History,
   LineChart as LineChartIcon,
 } from "lucide-react";
-import {AnimatePresence } from "framer-motion";
+import { AnimatePresence } from "framer-motion";
 import InventoryTable from "@/app/components/InventoryTable";
 import StatCard from "@/app/components/StatCard";
 import DashboardCard from "@/app/components/DashboardCard";
@@ -27,7 +27,6 @@ import {
   useDeleteLoan,
 } from "@/services/lib/hooks/useDatabase";
 import ExportDialog from "@/app/components/ExportDialog";
-import AnalyticsDialog from "@/app/components/AnalyticsDialog";
 import AddDialog from "@/app/components/AddDialog";
 import { getLoanStatus, getStockStatus } from "@/services/lib/hooks/helpers";
 import {
@@ -40,17 +39,28 @@ import { InventoryRow, LoanRow } from "@/services/lib/types";
 import ImportDialog from "@/app/components/ImportDialog";
 import { getUserInfo } from "@/services/auth/authCallers";
 import { toast } from "sonner";
+import ChartCarousel from "@/app/components/ChartCarousel";
+import LoanTrendsChart from "@/app/components/LoanTrends";
+import { useQuery } from "@tanstack/react-query";
 
 const UploadIcon = dynamic(
   () => import("lucide-react").then((mod) => mod.Upload),
   { ssr: false },
 );
-const LoansTable = dynamic(() => import("@/app/components/LoansTable"), {
-  ssr: false,
-});
+
+const LoansTable = dynamic(
+  () => import("@/app/components/LoansTable"),
+  { ssr: false },
+);
 
 type Tab = "inventory" | "loans";
 type ViewMode = "table" | "grid" | "chart";
+
+const NoData = () => (
+  <div className="flex items-center justify-center h-full text-sm font-mp text-neutral-400">
+    No data found
+  </div>
+);
 
 export default function Dashboard() {
   const deleteStock = useDeleteRow("Stock");
@@ -63,11 +73,8 @@ export default function Dashboard() {
   const [isAddOpen, setAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editData, setEditData] = useState<InventoryRow | LoanRow | null>(null);
-  const [isAnalyticsOpen, setAnalyticsOpen] = useState(false);
-  const [selectedRows, setSelectedRows] = useState<(InventoryRow | LoanRow)[]>(
-    [],
-  );
-  const [processedLoans, setProcessedLoans] = useState<LoanRow[]>([]);
+  const [loanChartMode, setLoanChartMode] = useState<"daily" | "hourly">("hourly");
+  const [selectedRows, setSelectedRows] = useState<(InventoryRow | LoanRow)[]>([]);
   const [showReturned, setShowReturned] = useState(false);
   const [onlyReturned, setOnlyReturned] = useState(false);
 
@@ -76,6 +83,12 @@ export default function Dashboard() {
 
   const typedInventoryData = inventoryData as InventoryRow[];
   const typedLoansData = rawLoansData as LoanRow[];
+
+  const { data: processedLoans = [] } = useQuery({
+    queryKey: ["enrichedLoans", typedLoansData],
+    queryFn: () => enrichData(typedLoansData, loanFetcher),
+    enabled: typedLoansData.length > 0,
+  });
 
   const handleClear = async () => {
     const user = await getUserInfo();
@@ -114,34 +127,6 @@ export default function Dashboard() {
       },
     });
   };
-
-  const rawLoansRef = useRef<LoanRow[]>([]);
-
-  useEffect(() => {
-    if (JSON.stringify(rawLoansRef.current) === JSON.stringify(typedLoansData))
-      return;
-    rawLoansRef.current = typedLoansData;
-
-    let isMounted = true;
-
-    if (typedLoansData.length === 0) {
-      setTimeout(() => {
-        if (isMounted) setProcessedLoans([]);
-      }, 0);
-      return () => {
-        isMounted = false;
-      };
-    }
-
-    enrichData(typedLoansData, loanFetcher).then((newData) => {
-      if (!isMounted) return;
-      setProcessedLoans(newData as LoanRow[]);
-    });
-
-    return () => {
-      isMounted = false;
-    };
-  }, [typedLoansData]);
 
   const handleSelectionChange = useCallback(
     (rows: (InventoryRow | LoanRow)[]) => {
@@ -197,7 +182,6 @@ export default function Dashboard() {
         </div>
 
         <div className="flex flex-col xl:flex-row gap-4 flex-1 min-h-0 overflow-hidden">
-          
           <div className="flex flex-col min-w-0 xl:flex-[2.5] border border-neutral-100 rounded-2xl bg-white min-h-0">
             <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-100 gap-3 shrink-0">
               <div className="flex items-center gap-4">
@@ -208,6 +192,7 @@ export default function Dashboard() {
                       onClick={() => {
                         setTab(t);
                         setSelectedRows([]);
+                        setViewMode("table");
                       }}
                       className={`px-4 py-1.5 font-mp rounded-md text-sm font-medium hover:scale-103 hover:cursor-pointer transition-all duration-200 ease-in-out ${tab === t ? "bg-white shadow-sm text-neutral-800" : "text-neutral-400"}`}
                     >
@@ -288,19 +273,16 @@ export default function Dashboard() {
                 </button>
                 <button
                   onClick={handleClear}
-                  className={`flex items-center font-mp gap-1.5 px-4 py-2 text-[13px] rounded-lg font-medium border hover:scale-103 hover:cursor-pointer transition-all duration-200 ease-in-out ${selectedRows.length > 0 ? "bg-red-50 border-red-100 text-red-600 hover:bg-red-100" : "bg-white border-neutral-200 text-neutral-500 hover:bg-neutral-50"}`}
+                  className={`flex items-center font-mp gap-1.5 px-4 py-2 text-[13px] rounded-lg font-medium border hover:scale-103 hover:cursor-pointer transition-all duration-200 ease-in-out ${
+                    selectedRows.length > 0
+                      ? "bg-red-50 border-red-100 text-red-600 hover:bg-red-100"
+                      : "bg-white border-neutral-200 text-neutral-500 hover:bg-neutral-50"
+                  }`}
                 >
                   <Trash2 size={15} />
                   {selectedRows.length > 0
                     ? `Clear (${selectedRows.length})`
                     : "Clear All"}
-                </button>
-                <button
-                  onClick={() => setAnalyticsOpen(true)}
-                  className="flex items-center gap-1.5 font-mp px-4 py-2 text-[13px] rounded-lg font-medium border hover:scale-103 hover:cursor-pointer transition-all duration-200 ease-in-out bg-white border-neutral-200 text-neutral-500 hover:bg-neutral-50"
-                >
-                  <LineChartIcon size={15} />
-                  Analytics
                 </button>
                 <button
                   onClick={() => setExportOpen(true)}
@@ -321,36 +303,70 @@ export default function Dashboard() {
 
             <div className="flex-1 min-h-0 overflow-auto">
               {tab === "inventory" && viewMode === "table" && (
-                <InventoryTable
-                  data={typedInventoryData}
-                  selectedRows={selectedRows as InventoryRow[]}
-                  onSelectionChange={handleSelectionChange}
-                />
+                typedInventoryData.length === 0 ? <NoData /> : (
+                  <InventoryTable
+                    data={typedInventoryData}
+                    selectedRows={selectedRows as InventoryRow[]}
+                    onSelectionChange={handleSelectionChange}
+                  />
+                )
               )}
               {tab === "loans" && viewMode === "table" && (
-                <LoansTable
-                  data={filteredLoans}
-                  selectedRows={selectedRows as LoanRow[]}
-                  onSelectionChange={handleSelectionChange}
-                />
+                filteredLoans.length === 0 ? <NoData /> : (
+                  <LoansTable
+                    data={filteredLoans}
+                    onSelectionChange={handleSelectionChange}
+                  />
+                )
               )}
               {viewMode === "chart" && (
                 <>
                   {tab === "inventory" ? (
-                    <InventoryDemandChart
-                      inventory={typedInventoryData}
-                      selectedRows={selectedRows}
-                    />
+                    typedInventoryData.length === 0 ? <NoData /> : (
+                      <ChartCarousel inventory={typedInventoryData} loans={processedLoans} />
+                    )
                   ) : (
-                    <LoansChart
-                      loans={processedLoans}
-                      selectedRows={selectedRows}
-                    />
+                    processedLoans.length === 0 ? <NoData /> : (
+                      <div className="flex flex-col gap-3 h-full p-4">
+                        <div className="flex items-center justify-between">
+                          <h3 className="font-mp text-sm font-semibold text-neutral-700">
+                            Loan Trends
+                            {selectedRows.length > 0 && (
+                              <span className="ml-2 text-xs font-normal text-neutral-400">
+                                ({selectedRows.length} selected)
+                              </span>
+                            )}
+                          </h3>
+                          <div className="flex items-center gap-1 bg-neutral-100 rounded-lg p-1">
+                            {(["hourly", "daily"] as const).map((m) => (
+                              <button
+                                key={m}
+                                onClick={() => setLoanChartMode(m)}
+                                className={`px-3 py-1 text-xs font-mp rounded-md font-medium transition-all duration-200 ${
+                                  loanChartMode === m
+                                    ? "bg-white shadow-sm text-neutral-800"
+                                    : "text-neutral-400"
+                                }`}
+                              >
+                                {m.charAt(0).toUpperCase() + m.slice(1)}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        <LoanTrendsChart
+                          loans={processedLoans}
+                          selection={selectedRows as LoanRow[]}
+                          mode={loanChartMode}
+                        />
+                      </div>
+                    )
                   )}
                 </>
               )}
               {viewMode === "grid" && (
                 <div className="flex flex-col flex-1 gap-4 p-4 overflow-auto min-h-0">
+                  {tab === "inventory" && typedInventoryData.length === 0 && <NoData />}
+                  {tab === "loans" && filteredLoans.length === 0 && <NoData />}
                   <div className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-4">
                     {tab === "inventory" &&
                       typedInventoryData.map((invItem) => {
@@ -376,7 +392,6 @@ export default function Dashboard() {
                           />
                         );
                       })}
-
                     {tab === "loans" &&
                       filteredLoans.map((loanItem) => {
                         const status = getLoanStatus(loanItem);
@@ -406,15 +421,14 @@ export default function Dashboard() {
             <div className="flex-1 border border-neutral-100 rounded-2xl bg-white flex flex-col overflow-hidden">
               <div className="px-5 py-4 border-b border-neutral-100 flex items-center gap-2 shrink-0">
                 <History size={15} className="text-neutral-400" />
-                <h3 className=" font-mp text-med font-semibold text-neutral-800">
+                <h3 className="font-mp text-med font-semibold text-neutral-800">
                   {formatText("Recent Activity")}
                 </h3>
               </div>
               <ActivityFeed />
             </div>
           </div>
-
-        </div> 
+        </div>
       </div>
 
       <AnimatePresence>
@@ -458,14 +472,6 @@ export default function Dashboard() {
             initialTableType={tab === "inventory" ? "Stock" : "Loans"}
             fixedTableType={true}
             editData={editData ?? undefined}
-          />
-        )}
-        {isAnalyticsOpen && (
-          <AnalyticsDialog
-            isOpen={isAnalyticsOpen}
-            onClose={() => setAnalyticsOpen(false)}
-            inventory={typedInventoryData}
-            loans={processedLoans}
           />
         )}
       </AnimatePresence>

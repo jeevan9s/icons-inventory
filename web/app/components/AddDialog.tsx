@@ -19,6 +19,8 @@ import { getDataFiltered } from "@/services/lib/database-functions/databaseHelpe
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { InventoryRow, LoanRow } from "@/services/lib/types";
+import { normalizeEqType } from "@/services/lib/helpers";
+import { normalize } from "path";
 
 type Props = {
   isOpen: boolean;
@@ -55,13 +57,13 @@ export default function AddDialog({
 
   const customEquipmentTypes =
     typeof window !== "undefined"
-      ? JSON.parse(localStorage.getItem("custom_equipment_types") ?? "[]")
+      ? JSON.parse(localStorage.getItem("custom_equipment_types") ?? "[]").map(normalizeEqType)
       : [];
 
   const equipmentTypes = Array.from(
     new Set([
       ...(stockRows as any[])
-        .map((r) => r.item_properties?.equipment_type)
+        .map((r) => normalizeEqType(r.item_properties?.equipment_type))
         .filter(Boolean),
       ...customEquipmentTypes,
     ]),
@@ -79,7 +81,7 @@ export default function AddDialog({
         {
           name: loan.item_name ?? "",
           quantity: loan.item_quantity ?? 1,
-          equipment_type: loan.equipment_type ?? "",
+          equipment_type: normalizeEqType(loan.equipment_type),
         },
       ]);
       setShowDropdowns([false]);
@@ -110,6 +112,9 @@ export default function AddDialog({
     value: string | number,
   ) => {
     const newItems = [...loanItems];
+
+    if (field === "equipment_type") value = normalizeEqType(value as string); 
+
     newItems[index] = { ...newItems[index], [field]: value };
     setLoanItems(newItems);
   };
@@ -141,77 +146,91 @@ export default function AddDialog({
   );
 
   const handleLoanSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!user?.id) return toast.error("User session missing.");
+  e.preventDefault();
+  if (!user?.id) return toast.error("User session missing.");
 
-    const formData = new FormData(e.currentTarget);
-    const rawStudentNum = formData.get("student_number") as string;
-    const studentNum = parseInt(rawStudentNum);
+  const formData = new FormData(e.currentTarget);
+  const rawStudentNum = formData.get("student_number") as string;
+  const studentNum = parseInt(rawStudentNum);
 
-    if (studentNum > 2147483647) {
-      toast.error("Student number too long (Max 10 digits).");
-      return;
-    }
+  if (studentNum > 2147483647) {
+    toast.error("Student number too long (Max 10 digits).");
+    return;
+  }
 
-    if (isEditMode) {
-      const loan = editData as LoanRow;
-      try {
-        await updateLoanRow.mutateAsync({
-          id: loan.id,
-          data: {
-            student_name: formData.get("student_name") as string,
-            student_number: studentNum,
-            location: formData.get("location") as string,
-            notes: formData.get("notes") as string,
-          },
-        });
-
-        if (loan.loan_item_id && loan.item_id) {
-          const results = await getDataFiltered(
-            "Stock",
-            "name",
-            "ilike",
-            `%${loanItems[0].name.trim()}%`,
-          );
-          const stockMatch = loanItems[0].equipment_type
-            ? (results as any[]).filter(
-                (r) =>
-                  r.item_properties?.equipment_type ===
-                  loanItems[0].equipment_type,
-              )
-            : (results as any[]);
-
-          if (stockMatch && stockMatch.length > 0) {
-            const stock = stockMatch[0];
-            const qtyDiff = loanItems[0].quantity - (loan.item_quantity ?? 1);
-
-            await updateLoanItemRow.mutateAsync({
-              id: loan.loan_item_id,
-              data: { item_quantity: loanItems[0].quantity },
-            });
-
-            await updateStockRow.mutateAsync({
-              id: stock.id,
-              data: { net_stock: Number(stock.net_stock) - qtyDiff },
-            });
-          }
-        }
-
-        toast.success("Loan updated.");
-        await Promise.all([
-          queryClient.invalidateQueries({ queryKey: ["Loans"] }),
-          queryClient.invalidateQueries({ queryKey: ["Stock"] }),
-          queryClient.invalidateQueries({ queryKey: ["Loan Items"] }),
-        ]);
-        onClose();
-        router.refresh();
-      } catch (err: unknown) {
-        toast.error(err instanceof Error ? err.message : "Update failed");
-      }
-      return;
-    }
-
+  if (isEditMode) {
+    const loan = editData as LoanRow;
     try {
+      await updateLoanRow.mutateAsync({
+        id: loan.id,
+        data: {
+          student_name: formData.get("student_name") as string,
+          student_number: studentNum,
+          location: formData.get("location") as string,
+          notes: formData.get("notes") as string,
+        },
+      });
+
+      if (loan.loan_item_id && loan.item_id) {
+        const results = await getDataFiltered(
+          "Stock",
+          "name",
+          "ilike",
+          `%${loanItems[0].name.trim()}%`,
+        );
+        const stockMatch = loanItems[0].equipment_type
+          ? (results as any[]).filter(
+              (r) =>
+                normalizeEqType(r.item_properties?.equipment_type) ===
+                normalizeEqType(loanItems[0].equipment_type),
+            )
+          : (results as any[]);
+
+        if (stockMatch && stockMatch.length > 0) {
+          const stock = stockMatch[0];
+          const qtyDiff = loanItems[0].quantity - (loan.item_quantity ?? 1);
+
+          await updateLoanItemRow.mutateAsync({
+            id: loan.loan_item_id,
+            data: { item_quantity: loanItems[0].quantity },
+          });
+
+          await updateStockRow.mutateAsync({
+            id: stock.id,
+            data: { net_stock: Number(stock.net_stock) - qtyDiff },
+          });
+        }
+      }
+
+      toast.success("Loan updated.");
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["Loans"] }),
+        queryClient.invalidateQueries({ queryKey: ["Stock"] }),
+        queryClient.invalidateQueries({ queryKey: ["Loan Items"] }),
+      ]);
+      onClose();
+      router.refresh();
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Update failed");
+    }
+    return;
+  }
+
+  try {
+    const existingLoans = await getDataFiltered(
+      "Loans",
+      "student_number",
+      "e",
+      studentNum,
+    );
+    const activeLoan = (existingLoans as LoanRow[])?.find((l) => !l.time_in);
+
+    let targetLoanId: string | number;
+
+    if (activeLoan) {
+      targetLoanId = activeLoan.id!;
+      toast.info(`Adding to ${activeLoan.student_name}'s active loan.`);
+    } else {
       const loanResponse = await insertRow.mutateAsync({
         table: "Loans",
         data: {
@@ -223,60 +242,66 @@ export default function AddDialog({
           time_out: new Date().toISOString(),
         },
       });
+      targetLoanId = loanResponse?.[0]?.id;
+      if (!targetLoanId) throw new Error("Failed to generate Loan ID");
+    }
 
-      const newLoanId = loanResponse?.[0]?.id;
-      if (!newLoanId) throw new Error("Failed to generate Loan ID");
+    for (const item of loanItems) {
+      const results = await getDataFiltered(
+        "Stock",
+        "name",
+        "ilike",
+        `%${item.name.trim()}%`,
+      );
+      const stockMatch = item.equipment_type
+        ? (results as any[]).filter(
+            (r) =>
+              normalizeEqType(r.item_properties?.equipment_type) ===
+              normalizeEqType(item.equipment_type),
+          )
+        : (results as any[]);
 
-      for (const item of loanItems) {
-        const results = await getDataFiltered(
-          "Stock",
-          "name",
-          "ilike",
-          `%${item.name.trim()}%`,
-        );
-        const stockMatch = item.equipment_type
-          ? (results as any[]).filter(
-              (r) => r.item_properties?.equipment_type === item.equipment_type,
-            )
-          : (results as any[]);
-
-        if (!stockMatch || stockMatch.length === 0) {
-          toast.error(`"${item.name}" not found in inventory.`);
-          continue;
-        }
-
-        const stock = stockMatch[0];
-
-        await insertRow.mutateAsync({
-          table: "Loan Items",
-          data: {
-            loan_id: newLoanId,
-            item_id: stock.id,
-            item_quantity: item.quantity,
-          },
-        });
-
-        await updateStockRow.mutateAsync({
-          id: stock.id,
-          data: { net_stock: Number(stock.net_stock) - Number(item.quantity) },
-        });
+      if (!stockMatch || stockMatch.length === 0) {
+        toast.error(`"${item.name}" not found in inventory.`);
+        continue;
       }
 
-      toast.success("Loan authorized and inventory updated.");
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["Loans"] }),
-        queryClient.invalidateQueries({ queryKey: ["Stock"] }),
-        queryClient.invalidateQueries({ queryKey: ["Loan Items"] }),
-      ]);
-      onClose();
-      router.refresh();
-    } catch (err: unknown) {
-      const errorMessage =
-        err instanceof Error ? err.message : "Transaction failed";
-      console.error("TRANSACTION FAILED:", errorMessage);
-      toast.error(errorMessage);
+      const stock = stockMatch[0];
+
+      await insertRow.mutateAsync({
+        table: "Loan Items",
+        data: {
+          loan_id: Number(targetLoanId),
+          item_id: stock.id,
+          item_quantity: item.quantity,
+        },
+      });
+
+      await updateStockRow.mutateAsync({
+        id: stock.id,
+        data: { net_stock: Number(stock.net_stock) - Number(item.quantity) },
+      });
     }
-  };
+
+    toast.success(
+      activeLoan
+        ? "Items added to existing loan."
+        : "Loan authorized and inventory updated.",
+    );
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["Loans"] }),
+      queryClient.invalidateQueries({ queryKey: ["Stock"] }),
+      queryClient.invalidateQueries({ queryKey: ["Loan Items"] }),
+    ]);
+    onClose();
+    router.refresh();
+  } catch (err: unknown) {
+    const errorMessage =
+      err instanceof Error ? err.message : "Transaction failed";
+    console.error("TRANSACTION FAILED:", errorMessage);
+    toast.error(errorMessage);
+  }
+};
 
   const handleStockSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -294,7 +319,7 @@ export default function AddDialog({
             net_stock: parseInt(formData.get("net_stock") as string),
             item_properties: {
               ...stock.item_properties,
-              equipment_type: formData.get("equipment_type") as string,
+              equipment_type: normalizeEqType(formData.get("equipment_type") as string),
             },
           },
         });
@@ -316,7 +341,7 @@ export default function AddDialog({
           total_stock: total,
           net_stock: total,
           item_properties: {
-            equipment_type: formData.get("equipment_type") as string,
+            equipment_type: normalizeEqType(formData.get("equipment_type") as string),
           },
         },
       });
