@@ -145,6 +145,7 @@ export const deEnrichRow = async (tableName: string, row: any) => {
   return cleanRow;
 };
 
+// frontend status colouring logic
 export const getIndicatorColor = (status: string) => {
   switch (status) {
     case 'Available': case 'In Stock': return 'bg-green-400';

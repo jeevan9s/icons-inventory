@@ -12,7 +12,7 @@ export const EditableCell = ({ value: initialValue, rowId, columnId, updateData 
   const [value, setValue] = useState(initialValue);
   const [isEditing, setIsEditing] = useState(false);
 
-  // Sync local state if external data changes
+  // sync local state if external data changes
   useEffect(() => {
     setValue(initialValue);
   }, [initialValue]);

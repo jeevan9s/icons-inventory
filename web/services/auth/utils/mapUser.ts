@@ -1,6 +1,7 @@
 import { User as SupabaseUser } from "@supabase/supabase-js";
 import { User, Role } from "./types";
 
+// map a supabase user "struct" to the app-defined User type 
 export const mapUser = (user: SupabaseUser): User => ({
     id: user.id,
     email: user.email,

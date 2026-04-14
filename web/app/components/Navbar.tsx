@@ -14,7 +14,7 @@ export default function Navbar({ pageType }: navbarProps) {
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
 
-  // Suppress hydration errors by waiting for mount
+  // suppress hydration errors by waiting for mount
   useEffect(() => {
     setMounted(true);
   }, []);

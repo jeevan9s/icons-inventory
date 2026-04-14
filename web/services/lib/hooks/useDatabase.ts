@@ -114,7 +114,7 @@ export const useExport = (tableName: TableName) => {
 
         if (keepRow) {
           if (tableName === "Loans") {
-            // Skip enrichment if required fields are missing or invalid
+            // skip enrichment if required fields are missing or invalid
             if (!row.signee || !row.id || row.signee === null || row.id === null || row.signee === undefined || row.id === undefined) {
               enrichedFilteredData.push({
                 ...row,
@@ -148,7 +148,7 @@ export const useExport = (tableName: TableName) => {
               }),
             );
 
-            // Get the first equipment_type from the items (assuming loans have one primary equipment type)
+            // get the first equipment_type from the items
             const equipment_type = itemDetails.find(item => item.equipment_type)?.equipment_type;
 
             enrichedFilteredData.push({

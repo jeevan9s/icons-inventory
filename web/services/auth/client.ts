@@ -2,7 +2,6 @@
 
 import { createBrowserClient } from "@supabase/ssr";
 import { msTenantId, supabaseAnonKey, supabaseURL, User } from "./utils/types";
-import { mapUser } from "./utils/mapUser";
 
 export const getBrowserClient = () => createBrowserClient(supabaseURL(), supabaseAnonKey());
 
@@ -12,7 +11,7 @@ export const loginWithMicrosoft = async () => {
         provider: 'azure',
         options: {
             scopes: 'openid email profile',
-            redirectTo: 'http://localhost:3000/api/auth/callback', // for dev
+            redirectTo: 'http://localhost:3000/api/auth/callback', // for dev CHANGE WHEN PROD
             queryParams: {tenant: msTenantId(), prompt: 'select_account'}  
         }
     })

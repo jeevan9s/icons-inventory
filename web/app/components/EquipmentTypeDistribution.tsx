@@ -13,6 +13,7 @@ interface TypeDistributionChartProps {
   data: { category: string; count: number }[];
 }
 
+// took some from icons logo, rest are just random
 const COLORS = [
   "#6F956D",
   "#7D3C38",

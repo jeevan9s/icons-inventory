@@ -5,6 +5,9 @@ import { useGetRows } from "./useDatabase";
 import { LoanRow } from "../types";
 import { getUnifiedActivity, enrichData, loanFetcher } from "../helpers";
 
+// hook for activity feed table in dashboard
+// logic for getting recent events 
+
 export function useActivity() {
   const { data: rawLoans = [], isLoading: loansLoading } = useGetRows<LoanRow>("Loans");
   const { data: rawStock = [], isLoading: stockLoading } = useGetRows<any>("Stock");
@@ -75,7 +78,7 @@ export function useActivity() {
         }
       });
 
-      // Detect deletions
+      // detect deletions
       stockIds.current.forEach((id) => {
         if (!currentStockIds.has(id)) {
           stockActivity.push({

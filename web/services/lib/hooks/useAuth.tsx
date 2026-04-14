@@ -1,5 +1,6 @@
 "use client";
 
+// auth hook
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { ensureProfile } from "@/services/auth/users/profile";
 import { supabase } from "@/services/auth/supabase";

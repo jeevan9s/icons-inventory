@@ -10,8 +10,6 @@ export interface User {
     createdAt?: string | undefined
 };
 
-
-
 // env vars
 // export const clientId = loadEnvVar("MS_CLIENT_ID")
 // export const clientSecret = loadEnvVar("MS_CLIENT_SECRET");
