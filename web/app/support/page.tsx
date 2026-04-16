@@ -2,28 +2,36 @@
 import Navbar from "../components/Navbar";
 
 export default function Support() {
-  return (
-    <div className="min-h-screen flex flex-col items-center bg-gray-300 select-none">
-            <Navbar pageType="landing" />
-      
+return (
+  <div className="min-h-screen flex flex-col items-center bg-neutral-100 select-none">
+    <Navbar pageType="main" />
 
-      <div className="flex flex-1 items-center justify-center px-6">
-        <div className="flex flex-col md:flex-row items-start gap-10 text-center md:text-left">
-          <div className="flex flex-col gap-4">
-            <h1 className="font-thin text-4xl sm:text-5xl md:text-7xl lg:text-8xl text-black font-mp">
-              Support 
-            </h1>
+    <div className="flex flex-1 items-center justify-center px-4 sm:px-6 lg:px-8 w-full">
+      <div className="flex flex-col lg:flex-row lg:gap-16 gap-10 w-full max-w-6xl">
 
-            <h3 className="text-black/80 font-med font-mp text-base sm:text-lg md:text-xl lg:text-2xl">
-              will include common operations/tutorials and a link to user manual (pdf)
-            </h3>
-          </div>
+        <div className="flex flex-col gap-4 lg:w-1/2">
+          <h1 className="font-thin text-4xl sm:text-5xl md:text-7xl lg:text-8xl text-black font-mp">
+            Support
+          </h1>
+
+          {/* <h3 className="text-black/80 font-med font-mp text-base sm:text-lg md:text-xl lg:text-2xl">
+            Access the manual and learn about website actions.
+          </h3>  */}
+
+        <div className="flex flex-col lg:w-1/2 gap-4">
+          <h2 className="text-2xl font-semibold text-black font-mp">User Manual</h2>
+          <p className="text-black/60 font-mp">
+            Our comprehensive user manual is currently under development. It will provide step-by-step guides for using the Icons Inventory system effectively. Check back soon for updates!
+          </p>
+
         </div>
       </div>
-
-      <div className="px-6 py-4">
-        <p className="text-black/80 font-mp text-sm">built for the iCons</p>
-      </div>
     </div>
-  );
+
+    <div className="px-6 py-4 w-full text-center">
+      <p className="text-black/80 font-mp text-sm">built for the iCons</p>
+    </div>
+  </div>
+  </div>
+);
 }

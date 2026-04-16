@@ -1,6 +1,6 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { User } from "../utils/types";
-import { Database } from "@/app/databasetesting/database.types";
+import { Database } from "@/services/lib/database-functions/database.types";
 
 export async function ensureProfile(user: User, supabaseClient: SupabaseClient<Database>) {
   let profile = await getUserProfile(user.id, supabaseClient);

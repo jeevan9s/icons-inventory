@@ -1,6 +1,6 @@
-// ez frontend calls
+// frontend calls for login, logout, and fetching user info
+
 import { loginWithMicrosoft, logout, populateUser } from "./client";
-import authLogger from "./utils/authLogger";
 
 export const onLogin = async () => {
     const { error } = await loginWithMicrosoft();
@@ -14,14 +14,6 @@ export const onLogout = async () => {
     await logout();
 }
 
-export const onCheckStatus = async () => {
-    const user = await populateUser();
-    if (user) {
-        authLogger(user);
-    }
-    return user;
-}
-
 export async function getUserInfo() {
     try {
         const profile = await populateUser();
@@ -32,5 +24,4 @@ export async function getUserInfo() {
         console.error("failed to get user info", error);
         return null;
     }
-
 }

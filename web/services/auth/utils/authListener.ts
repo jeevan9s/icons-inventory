@@ -1,7 +1,8 @@
-import { supabase } from "@/services/auth/supabase"; // Use the new global constant
+import { supabase } from "@/services/auth/supabase"; 
 import { ensureProfile } from "../users/profile";
 import mapSupabaseUser from "@/services/shared/utils";
 
+// map a user to the supabase Profiles table based on a listened login event
 export default function authListener(onProfileVerified?: (profile: any) => void) {
 
   const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {

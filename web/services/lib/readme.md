@@ -32,6 +32,26 @@ When specifying both `count` and `begin` it will return count entry starting at 
 
 getData() will return an `Array<Object>` object containing the specified entries. It may return an empy `Array<Object>` if there was either an error, or supabase simply did not have any entries in the specified table.
 
+#### getDataFiltered()
+
+This function is implemented as `getDataFiltered(table, filterBy, qualifier, filterTerm)`. It is used to get all entries from a specified table that match the specified search. **NOTE:** This is limited to the first 1000 entries due to supabase api limits.
+
+##### Parameters
+
+- `table` is a `string` representing the name of a table to get data from.
+- `filterBy` is the column in `table` to filter by.
+- `qualifier` is a typed string representing which entries qualify. The possible types are:
+  - `"e"` equal to
+  - `"gt"` greater than
+  - `"lt"` less than
+  - `"gte"` greater than or equal to
+  - `"lte"` less than or equal to
+- `filterTerm` is the value to qualify every entries `filterBy` row against.
+
+##### Returns
+
+Returns an array of row objects in the format of the specified table.
+
 #### deleteById()
 
 This function is implemented as: `getById(table, id)`. It is used for the targeted removal of entries from a specific table.

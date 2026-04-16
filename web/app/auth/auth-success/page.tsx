@@ -1,54 +1,39 @@
+"use client";
 
-"use client"
-
-import { useEffect, useState } from "react";
-import authListener from "@/services/auth/utils/authListener";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import Navbar from "@/app/components/Navbar";
 
 export default function AuthSuccessPage() {
-const [user, setUser] = useState<any>(null);
+  const router = useRouter();
 
   useEffect(() => {
-    const subscription = authListener((profile) => {
-      setUser(profile);
-    });
-
-    return () => {
-      if (subscription) subscription.unsubscribe();
-    };
+    const timer = setTimeout(() => {
+      router.push("/main/dashboard");
+    }, 2000);
+    return () => clearTimeout(timer);
   }, []);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <div className="flex flex-col items-center justify-center gap-3">
-        <h1 className="font-semibold">login success</h1>
-        {user ? (
-          <div className="text-center text-zinc-600 dark:text-zinc-400">
-            <p>login details:</p>
-            <p>
-              name:{" "}
-              <span className="font-medium text-zinc-900 dark:text-zinc-100">
-                {user.name}
-              </span>
-            </p>
-            <p>
-              email address:{" "}
-              <span className="font-medium text-zinc-900 dark:text-zinc-100">
-                {user.email}
-              </span>
-            </p>
-          </div>
-        ) : (
-          <p className="text-sm text-zinc-400 animate-pulse">
-            loading profile...
-          </p>
-        )}
+    <div className="min-h-screen flex flex-col items-center bg-neutral-100 select-none">
+      <Navbar pageType="main" />
 
-        <button
-          onClick={() => (window.location.href = "/")}
-          className="mt-4 px-4 py-2 bg-zinc-900 text-white rounded-lg text-sm hover:bg-zinc-800 transition-colors"
-        >
-          return
-        </button>
+      <div className="flex flex-1 items-center justify-center px-6">
+        <div className="flex flex-col md:flex-row items-start gap-10 text-center md:text-left">
+          <div className="flex flex-col gap-4">
+            <h1 className="font-thin text-4xl sm:text-5xl md:text-7xl lg:text-8xl text-black font-mp">
+              Authorized
+            </h1>
+
+            <h3 className="text-black/80 font-med font-mp text-base sm:text-lg md:text-xl lg:text-2xl">
+              You will now be redirected to the main dashboard.
+            </h3>
+          </div>
+        </div>
+      </div>
+
+      <div className="px-6 py-4">
+        <p className="text-black/80 font-mp text-sm">built for the iCons</p>
       </div>
     </div>
   );
