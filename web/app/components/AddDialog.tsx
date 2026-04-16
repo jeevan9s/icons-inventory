@@ -162,7 +162,7 @@ export default function AddDialog({
     const loan = editData as LoanRow;
     try {
       await updateLoanRow.mutateAsync({
-        id: loan.id,
+        id: loan.id!,
         data: {
           student_name: formData.get("student_name") as string,
           student_number: studentNum,
