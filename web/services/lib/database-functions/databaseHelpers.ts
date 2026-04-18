@@ -168,10 +168,10 @@ export async function exportTable<table_name extends keyof Database['public']['T
     let csvContent: string = headers.join(",") + "\n";
     entries.forEach((entry) => {
         Object.values(entry).forEach((value) => {
-            let formatted  = typeof value == "object" && value ? JSON.stringify(value) : value // added serialization layer to properly display JSON field in "Stock" table after export
+            let formatted = typeof value == "object" && value ? JSON.stringify(value) : value // added serialization layer to properly display JSON field in "Stock" table after export
             formatted = String(formatted ?? "");
 
-            csvContent += `"${formatted.replace(/"/g, '""')}",`
+            csvContent += `"${(formatted as string).replace(/"/g, '""')}",`
 
         })
         csvContent += "\n";
