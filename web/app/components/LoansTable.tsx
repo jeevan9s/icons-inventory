@@ -196,7 +196,7 @@ export default function LoansTable({
 
   const handleUpdate = useCallback(
     (id: string, columnId: string, value: string) => {
-      const row = localData.find((r) => r.id.toString() === id);
+      const row = localData.find((r) => r.id !== null && r.id.toString() === id);
 
       if (columnId === "item_name") {
         if (!row?.item_id) {
@@ -294,6 +294,10 @@ export default function LoansTable({
 
   const handleReturnToggle = useCallback(
     (row: LoanRow) => {
+      if (row.id === null) {
+        toast.error("Cannot update loan: ID is missing");
+        return;
+      }
       returnToggle.mutate(
         { id: row.id, time_in: row.time_in ?? null },
         {
@@ -367,26 +371,29 @@ export default function LoansTable({
             onSort={column.getToggleSortingHandler()!}
           />
         ),
-        cell: ({ getValue, row, column }) => (
-          <EditableCell
-            value={(getValue() as string) || "—"}
-            rowId={row.original.id.toString()}
-            columnId={column.id}
-            updateData={async (rowId, columnId, newValue) => {
-              const results = await getDataFiltered(
-                "Stock",
-                "name",
-                "ilike",
-                `%${newValue.trim()}%`,
-              );
-              if (!results || results.length === 0) {
-                toast.error(`"${newValue}" not found in inventory.`);
-                return;
-              }
-              handleUpdate(rowId, columnId, newValue);
-            }}
-          />
-        ),
+        cell: ({ getValue, row, column }) => {
+          if (row.original.id === null) return <span>—</span>;
+          return (
+            <EditableCell
+              value={(getValue() as string) || "—"}
+              rowId={row.original.id.toString()}
+              columnId={column.id}
+              updateData={async (rowId, columnId, newValue) => {
+                const results = await getDataFiltered(
+                  "Stock",
+                  "name",
+                  "ilike",
+                  `%${newValue.trim()}%`,
+                );
+                if (!results || results.length === 0) {
+                  toast.error(`"${newValue}" not found in inventory.`);
+                  return;
+                }
+                handleUpdate(rowId, columnId, newValue);
+              }}
+            />
+          );
+        },
       },
       {
         accessorKey: "item_quantity",
@@ -398,14 +405,17 @@ export default function LoansTable({
             onSort={column.getToggleSortingHandler()!}
           />
         ),
-        cell: ({ getValue, row, column }) => (
-          <EditableCell
-            value={String(getValue() ?? "1")}
-            rowId={row.original.id.toString()}
-            columnId={column.id}
-            updateData={handleUpdate}
-          />
-        ),
+        cell: ({ getValue, row, column }) => {
+          if (row.original.id === null) return <span>—</span>;
+          return (
+            <EditableCell
+              value={String(getValue() ?? "1")}
+              rowId={row.original.id.toString()}
+              columnId={column.id}
+              updateData={handleUpdate}
+            />
+          );
+        },
         size: 60,
       },
       {
@@ -420,12 +430,18 @@ export default function LoansTable({
         ),
         cell: ({ getValue, row }) => {
           const current = getValue() as string;
+          if (row.original.id === null) return <span>—</span>;
           return (
             <select
               value={current || ""}
               onChange={async (e) => {
                 const newType = e.target.value;
                 const itemName = row.original.item_name;
+
+                if (!itemName) {
+                  toast.error("Item name is required");
+                  return;
+                }
 
                 const results = await getDataFiltered(
                   "Stock",
@@ -443,6 +459,11 @@ export default function LoansTable({
                   toast.error(
                     `"${itemName}" with type "${newType}" not found in inventory.`,
                   );
+                  return;
+                }
+
+                if (row.original.id === null) {
+                  toast.error("Cannot update: ID is missing");
                   return;
                 }
 
@@ -478,14 +499,17 @@ export default function LoansTable({
             onSort={column.getToggleSortingHandler()!}
           />
         ),
-        cell: ({ getValue, row, column }) => (
-          <EditableCell
-            value={formatCapitalized(getValue() as string) || "—"}
-            rowId={row.original.id.toString()}
-            columnId={column.id}
-            updateData={handleUpdate}
-          />
-        ),
+        cell: ({ getValue, row, column }) => {
+          if (row.original.id === null) return <span>—</span>;
+          return (
+            <EditableCell
+              value={formatCapitalized(getValue() as string) || "—"}
+              rowId={row.original.id.toString()}
+              columnId={column.id}
+              updateData={handleUpdate}
+            />
+          );
+        },
       },
       {
         accessorKey: "student_number",
@@ -497,14 +521,17 @@ export default function LoansTable({
             onSort={column.getToggleSortingHandler()!}
           />
         ),
-        cell: ({ getValue, row, column }) => (
-          <EditableCell
-            value={(getValue() as string) || ""}
-            rowId={row.original.id.toString()}
-            columnId={column.id}
-            updateData={handleUpdate}
-          />
-        ),
+        cell: ({ getValue, row, column }) => {
+          if (row.original.id === null) return <span>—</span>;
+          return (
+            <EditableCell
+              value={(getValue() as string) || ""}
+              rowId={row.original.id.toString()}
+              columnId={column.id}
+              updateData={handleUpdate}
+            />
+          );
+        },
       },
       {
         accessorKey: "location",
@@ -516,14 +543,17 @@ export default function LoansTable({
             onSort={column.getToggleSortingHandler()!}
           />
         ),
-        cell: ({ getValue, row, column }) => (
-          <EditableCell
-            value={(getValue() as string) || ""}
-            rowId={row.original.id.toString()}
-            columnId={column.id}
-            updateData={handleUpdate}
-          />
-        ),
+        cell: ({ getValue, row, column }) => {
+          if (row.original.id === null) return <span>—</span>;
+          return (
+            <EditableCell
+              value={(getValue() as string) || ""}
+              rowId={row.original.id.toString()}
+              columnId={column.id}
+              updateData={handleUpdate}
+            />
+          );
+        },
       },
       {
         accessorKey: "status",
@@ -601,7 +631,11 @@ export default function LoansTable({
               setEditData(row.original);
               setIsEditOpen(true);
             }}
-            onDelete={() => handleDelete(row.original.id)}
+            onDelete={() => {
+              if (row.original.id !== null) {
+                handleDelete(row.original.id);
+              }
+            }}
           />
         ),
         size: 40,
@@ -652,7 +686,11 @@ export default function LoansTable({
               onClick={() => {
                 table
                   .getSelectedRowModel()
-                  .rows.forEach((row) => handleDelete(row.original.id));
+                  .rows.forEach((row) => {
+                    if (row.original.id !== null) {
+                      handleDelete(row.original.id);
+                    }
+                  });
                 setRowSelection({});
               }}
               className="text-[12px] text-neutral-400 hover:text-neutral-600 underline decoration-neutral-200"
