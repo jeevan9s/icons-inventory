@@ -65,7 +65,7 @@ export default function LoanPage() {
           hasSelectedRows={selectedRows.length > 0}
           selectedRows={selectedRows}
         />
-        <Add />
+        <Add initialTableType="Loans" />
       </div>
     </Layout>
   );

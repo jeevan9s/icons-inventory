@@ -115,9 +115,11 @@ export default function Dashboard() {
       action: {
         label: "Clear",
         onClick: () => {
-          targets.forEach((row: InventoryRow | LoanRow) =>
-            mutation.mutate(row.id),
-          );
+          targets.forEach((row: InventoryRow | LoanRow) => {
+            if (row.id !== null) {
+              mutation.mutate(row.id);
+            }
+          });
           setSelectedRows([]);
         },
       },
@@ -162,7 +164,7 @@ export default function Dashboard() {
           <StatCard
             icon={Package}
             label={formatText("Total items")}
-            value={inventoryData.length}
+            value={typedInventoryData.length}
           />
           <StatCard
             icon={ClipboardList}
@@ -306,7 +308,6 @@ export default function Dashboard() {
                 typedInventoryData.length === 0 ? <NoData /> : (
                   <InventoryTable
                     data={typedInventoryData}
-                    selectedRows={selectedRows as InventoryRow[]}
                     onSelectionChange={handleSelectionChange}
                   />
                 )
@@ -402,8 +403,8 @@ export default function Dashboard() {
                             indicatorColor={getIndicatorColor(status)}
                             title={loanItem.item_name || "Unknown"}
                             subtitle={loanItem.display_name ?? "-"}
-                            location={loanItem.location}
-                            studentName={loanItem.student_name}
+                            location={loanItem.location || undefined}
+                            studentName={loanItem.student_name || undefined}
                             onClick={() => {
                               setEditData(loanItem);
                               setIsEditOpen(true);

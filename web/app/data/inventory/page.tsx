@@ -61,7 +61,7 @@ export default function InventoryPage() {
           hasSelectedRows={selectedRows.length > 0} 
           selectedRows={selectedRows} 
         />
-        <Add />
+        <Add initialTableType="Stock"/>
       </div>
     </Layout>
   );
