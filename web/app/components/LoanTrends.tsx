@@ -37,15 +37,30 @@ export default function LoanTrendsChart({
 
   return (
     <div className="h-full w-full">
-    <ResponsiveContainer width="100%" height="100%">
-      <LineChart data={data} margin={{ top: 20, right: 20, bottom: 20, left: 0 }}>
-        <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="label" />
-        <YAxis />
-        <Tooltip formatter={(value: string | number | undefined) => (typeof value === 'number' && normalize ? `${(value * 100).toFixed(1)}%` : value)} />
-        <Line type="monotone" dataKey="total" stroke="#6F956D" strokeWidth={2} />
-      </LineChart>
-    </ResponsiveContainer>
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart
+          data={data}
+          margin={{ top: 20, right: 20, bottom: 20, left: 0 }}
+        >
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey="label" />
+          <YAxis />
+          <Tooltip
+            formatter={(value: any) => {
+              if (typeof value === "number") {
+                return normalize ? `${(value * 100).toFixed(1)}%` : value;
+              }
+              return value;
+            }}
+          />
+          <Line
+            type="monotone"
+            dataKey="total"
+            stroke="#6F956D"
+            strokeWidth={2}
+          />
+        </LineChart>
+      </ResponsiveContainer>
     </div>
   );
 }
