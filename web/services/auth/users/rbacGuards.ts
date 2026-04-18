@@ -8,7 +8,8 @@ export async function requireRole(userId: string, roles: Role | Role[]) {
     if (!profile) throw new Error("profile not found")
     
     const allowedRoles = Array.isArray(roles) ? roles : [roles]
-    if (!allowedRoles.includes(profile.role)) {
+    const role = profile.role
+    if (!role || !allowedRoles.includes(role)) {
         throw new Error("unauthorized -> insufficient role");
     }
 
