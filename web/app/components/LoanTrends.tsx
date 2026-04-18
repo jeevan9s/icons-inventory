@@ -42,7 +42,7 @@ export default function LoanTrendsChart({
         <CartesianGrid strokeDasharray="3 3" />
         <XAxis dataKey="label" />
         <YAxis />
-        <Tooltip formatter={(value: number) => (normalize ? `${(value * 100).toFixed(1)}%` : value)} />
+        <Tooltip formatter={(value: string | number | undefined) => (typeof value === 'number' && normalize ? `${(value * 100).toFixed(1)}%` : value)} />
         <Line type="monotone" dataKey="total" stroke="#6F956D" strokeWidth={2} />
       </LineChart>
     </ResponsiveContainer>
