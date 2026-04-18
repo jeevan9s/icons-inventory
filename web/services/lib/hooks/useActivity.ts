@@ -23,10 +23,13 @@ export function useActivity() {
   const loanVersion = useMemo(() => JSON.stringify(rawLoans), [rawLoans]);
   const stockVersion = useMemo(() => JSON.stringify(rawStock), [rawStock]);
 
+  const typedRawLoans = Array.isArray(rawLoans) ? rawLoans : [];
+  const typedRawStock = Array.isArray(rawStock) ? rawStock : [];
+
   const query = useQuery({
     queryKey: ["enriched-activity", loanVersion, stockVersion, clearVersion],
     queryFn: async () => {
-      rawLoans.forEach((loan) => {
+      typedRawLoans.forEach((loan: LoanRow) => {
         if (!loan.id) return;
         const snapshot = JSON.stringify(loan);
         const outKey = `${loan.id}-out`;
@@ -50,13 +53,13 @@ export function useActivity() {
         }
       });
 
-      const enriched = rawLoans.length ? await enrichData(rawLoans, loanFetcher) : [];
+      const enriched = typedRawLoans.length ? await enrichData(typedRawLoans, loanFetcher) : [];
       const loanActivity = getUnifiedActivity(enriched as LoanRow[], seenAt.current);
 
       const stockActivity: any[] = [];
-      const currentStockIds = new Set(rawStock.map((i: any) => i.id));
+      const currentStockIds = new Set(typedRawStock.map((i: any) => i.id));
 
-      rawStock.forEach((item: any) => {
+      typedRawStock.forEach((item: any) => {
         if (!item.id) return;
         stockNames.current[item.id] = item.name;
         if (!stockIds.current.has(item.id)) {
@@ -79,7 +82,7 @@ export function useActivity() {
       });
 
       // detect deletions
-      stockIds.current.forEach((id) => {
+      stockIds.current.forEach((id: string | number) => {
         if (!currentStockIds.has(id)) {
           stockActivity.push({
             id: `stock-${id}-removed`,

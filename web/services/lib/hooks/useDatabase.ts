@@ -18,12 +18,12 @@ import Papa from "papaparse"
 // mutate -> update, create, and delete data
 
 // fetch all database rows
-export const useGetRows = <T>(tableName: TableName) => {
+export const useGetRows = <T extends object>(tableName: TableName) => {
   return useQuery<T[]>({
     queryKey: [tableName],
-    queryFn: async () => {
+    queryFn: async (): Promise<T[]> => {
       const data = await getData(tableName, "id", true);
-      return data || [];
+      return (data || []) as T[];
     },
     refetchInterval: 5000,
   });
@@ -140,7 +140,7 @@ export const useExport = (tableName: TableName) => {
                   li.item_id,
                 );
                 const name = stock?.[0]?.name || "Unknown";
-                const equipment_type = stock?.[0]?.item_properties?.equipment_type;
+                const equipment_type = (stock?.[0]?.item_properties as any)?.equipment_type;
                 return {
                   name: name.charAt(0).toUpperCase() + name.slice(1),
                   equipment_type
@@ -260,25 +260,28 @@ export const useImport = <T extends TableName>(table: T) => {
     mutationFn: async (file: File) => {
       const text = await file.text();
 
-      const parsed = Papa.parse(text, {
-        header: true,
-        skipEmptyLines: true,
-        dynamicTyping: false,
-        quoteChar: '"',
-        escapeChar: '"',
-        skipEmptyLines: 'greedy',
-        strictHeader: false,
-      } as any);
+      const parsed: any = await new Promise((resolve, reject) => {
+        Papa.parse<any>(text, {
+          header: true,
+          dynamicTyping: false,
+          quoteChar: '"',
+          escapeChar: '"',
+          skipEmptyLines: 'greedy',
+          strictHeader: false,
+          complete: (result: any) => resolve(result),
+          error: (error: any) => reject(error),
+        } as any);
+      });
 
-      const criticalErrors = parsed.errors.filter((err: any) =>
+      const criticalErrors = parsed.errors?.filter((err: any) =>
         err.code !== 'TooManyFields' && err.code !== 'TooFewFields'
-      );
+      ) || [];
 
       if (criticalErrors.length > 0) {
         throw new Error(`CSV parse error: ${criticalErrors[0].message}`);
       }
 
-      const filteredRows = parsed.data.map((row: any) => {
+      const filteredRows = parsed.data?.map((row: any) => {
         const cleaned: any = {};
         Object.entries(row).forEach(([key, value]) => {
           if (key &&
