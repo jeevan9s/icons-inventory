@@ -1,4 +1,4 @@
-import { setMinutes, setHours, parseISO } from "date-fns";
+import { setMinutes, setHours } from "date-fns";
 import { getDataFiltered } from "./database-functions/databaseHelpers";
 import { LoanItemRow, LoanRow, ActivityItem } from "./types";
 
@@ -83,12 +83,12 @@ export const loanFetcher = async (loan: LoanRow) => {
       if (!itemData) return null;
 
       const loanItem = itemsList.find(li => li.item_id === itemId);
-      const quantity = loanItem?.item_quantity ?? 1;
+      const quantity = 1;
       const itemStatus = loanItem?.status;
 
       return {
         name: formatCapitalized(itemData.name || "Unknown"),
-        type: itemData.item_properties?.equipment_type,
+        type: (itemData.item_properties as any)?.equipment_type,
         quantity,
         status: itemStatus,
       };
