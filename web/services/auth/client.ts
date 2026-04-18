@@ -11,7 +11,7 @@ export const loginWithMicrosoft = async () => {
         provider: 'azure',
         options: {
             scopes: 'openid email profile',
-            redirectTo: 'http://localhost:3000/api/auth/callback', // for dev CHANGE WHEN PROD
+            redirectTo: 'https://icons-ims.vercel.app/api/auth/callback', // changed for PROD
             queryParams: {tenant: msTenantId(), prompt: 'select_account'}  
         }
     })
