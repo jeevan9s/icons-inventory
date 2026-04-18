@@ -269,14 +269,11 @@ export default function Sidebar({
 
       <SignOut />
       <SettingsD />
-      <Add />
+      <Add initialTableType="Loans" />
       <Export
-        initialTableType={"loans"}
+        initialTableType="Loans"
         fixedTableType={false}
         hasSelectedRows={false}
-        onExport={(type, table, filters) => {
-          console.log("export triggered:", type, table, filters);
-        }}
       />
 
       {isLocked && (
