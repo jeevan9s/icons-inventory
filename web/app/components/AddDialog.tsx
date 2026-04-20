@@ -638,6 +638,8 @@ export default function AddDialog({
               >
                 {insertRow.isPending || updateLoanRow.isPending ? (
                   <Loader2 className="animate-spin" />
+                ) : isEditMode ? (
+                  "Save Changes"
                 ) : (
                   "Authorize Loan"
                 )}

@@ -28,7 +28,7 @@ export function getStockStatus(item: InventoryRow): string {
         return 'No Stock Info';
     } else if (item.net_stock <= 0) {
         return 'Out of Stock';
-    } else if (item.net_stock === 1 || item.net_stock / item.total_stock <= 0.25) {
+    } else if (item.net_stock / item.total_stock <= 0.25) {
         return 'Low Stock';
     } else {
         return 'Available';
