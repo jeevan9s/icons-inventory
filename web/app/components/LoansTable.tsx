@@ -667,19 +667,20 @@ export default function LoansTable({
 
   return (
     <div className="flex flex-col h-full bg-white">
-      <div className="flex items-center justify-between px-3 py-2 border-b border-neutral-100 sticky top-0 z-10 bg-white">
-        <div className="flex items-center gap-2 flex-1">
+      <div className="flex items-center justify-between px-2 sm:px-3 py-2 border-b border-neutral-100 sticky top-0 z-10 bg-white gap-2 flex-wrap">
+        <div className="flex items-center gap-2 flex-1 min-w-[150px]">
           <Search size={13} className="text-neutral-400 shrink-0" />
           <Input
             value={globalFilter}
             onChange={(e) => setGlobalFilter(e.target.value)}
             placeholder="Search loans..."
-            className="h-7 bg-transparent border-none text-xs focus-visible:ring-0 p-0"
+            className="h-7 bg-transparent border-none text-xs focus-visible:ring-0 p-0 w-full"
+            maxLength={50}
           />
         </div>
         {table.getSelectedRowModel().rows.length > 0 && (
-          <div className="flex items-center gap-2 animate-in fade-in zoom-in duration-200">
-            <span className="text-[12px] font-bold text-neutral-500 bg-neutral-100 px-2 py-0.5 rounded-full">
+          <div className="flex items-center gap-2 animate-in fade-in zoom-in duration-200 flex-wrap text-xs sm:text-sm">
+            <span className="text-[11px] sm:text-[12px] font-bold text-neutral-500 bg-neutral-100 px-2 py-0.5 rounded-full whitespace-nowrap">
               {table.getSelectedRowModel().rows.length} Selected
             </span>
             <button
@@ -700,7 +701,7 @@ export default function LoansTable({
           </div>
         )}
       </div>
-      <div className="overflow-auto flex-1 custom-scrollbar">
+      <div className="overflow-auto flex-1 custom-scrollbar -mx-4 sm:mx-0">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((hg) => (
@@ -708,7 +709,7 @@ export default function LoansTable({
                 {hg.headers.map((header) => (
                   <TableHead
                     key={header.id}
-                    className="bg-neutral-50 px-4 py-2.5 font-mp"
+                    className="bg-neutral-50 px-2 sm:px-4 py-2.5 font-mp text-xs sm:text-sm whitespace-nowrap"
                     style={{ width: header.getSize() }}
                   >
                     {flexRender(
@@ -733,7 +734,7 @@ export default function LoansTable({
                   {row.getVisibleCells().map((cell) => (
                     <TableCell
                       key={cell.id}
-                      className="px-4 py-2.5 text-sm font-mp"
+                      className="px-2 sm:px-4 py-2.5 text-xs sm:text-sm font-mp whitespace-nowrap"
                     >
                       {flexRender(
                         cell.column.columnDef.cell,

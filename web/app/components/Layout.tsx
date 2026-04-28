@@ -15,6 +15,14 @@ export default function Layout({ disableHoverZones = false, children }: LayoutPr
   const [isLocked, setIsLocked] = useState(true);
   const [isHoveredMouse, setIsHoveredMouse] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_SIDEBAR_WIDTH);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   useEffect(() => {
     if (disableHoverZones) return;
@@ -39,24 +47,39 @@ export default function Layout({ disableHoverZones = false, children }: LayoutPr
     return () => window.removeEventListener('mousemove', handleHover);
   }, [disableHoverZones, isLocked]);
 
-  const marginLeft = isLocked
+  const marginLeft = isMobile ? 0 : (isLocked
     ? sidebarWidth
     : isHoveredMouse
     ? DEFAULT_SIDEBAR_WIDTH
-    : 0;
+    : 0);
 
   return (
     <div className="min-h-screen bg-neutral-100 select-none">
-      <Navbar pageType='main' />
+      {isMobile ? (
+        <Sidebar
+          isLocked={true}
+          isHovered={false}
+          setIsHovered={() => {}}
+          setIsLocked={() => {}}
+          disableHoverZones={true}
+          onWidthChange={() => {}}
+          isMobile={true}
+        />
+      ) : (
+        <Navbar pageType='main' />
+      )}
 
-      <Sidebar
-        isLocked={isLocked}
-        isHovered={isHoveredMouse}
-        setIsHovered={setIsHoveredMouse}
-        setIsLocked={setIsLocked}
-        disableHoverZones={disableHoverZones}
-        onWidthChange={setSidebarWidth}
-      />
+      {!isMobile && (
+        <Sidebar
+          isLocked={isLocked}
+          isHovered={isHoveredMouse}
+          setIsHovered={setIsHoveredMouse}
+          setIsLocked={setIsLocked}
+          disableHoverZones={disableHoverZones}
+          onWidthChange={setSidebarWidth}
+          isMobile={false}
+        />
+      )}
 
       <main
         style={{

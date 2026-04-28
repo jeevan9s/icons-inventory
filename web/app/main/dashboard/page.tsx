@@ -159,8 +159,8 @@ export default function Dashboard() {
 
   return (
     <Layout>
-      <div className="h-[calc(100vh-115px)] px-4 sm:px-6 lg:px-8 py-4 sm:py-6 flex flex-col gap-4 overflow-hidden">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 shrink-0">
+      <div className="min-h-screen md:h-[calc(100vh-115px)] px-2 sm:px-4 md:px-6 lg:px-8 py-2 sm:py-4 md:py-6 flex flex-col gap-3 sm:gap-4 overflow-hidden\">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 md:gap-4 shrink-0">
           <StatCard
             icon={Package}
             label={formatText("Total items")}
@@ -183,11 +183,11 @@ export default function Dashboard() {
           />
         </div>
 
-        <div className="flex flex-col xl:flex-row gap-4 flex-1 min-h-0 overflow-hidden">
-          <div className="flex flex-col min-w-0 xl:flex-[2.5] border border-neutral-100 rounded-2xl bg-white min-h-0">
+        <div className="flex flex-col lg:flex-row gap-4 flex-1 min-h-0 overflow-hidden">
+          <div className="flex flex-col min-w-0 lg:flex-[2.5] border border-neutral-100 rounded-2xl bg-white min-h-0">
             <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-100 gap-3 shrink-0">
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-1 bg-neutral-100 rounded-lg p-1">
+            <div className="flex items-center gap-4 flex-wrap">
+                <div className="flex items-center gap-1 bg-neutral-100 rounded-lg p-1 flex-wrap">
                   {(["loans", "inventory"] as Tab[]).map((t) => (
                     <button
                       key={t}
@@ -196,7 +196,7 @@ export default function Dashboard() {
                         setSelectedRows([]);
                         setViewMode("table");
                       }}
-                      className={`px-4 py-1.5 font-mp rounded-md text-sm font-medium hover:scale-103 hover:cursor-pointer transition-all duration-200 ease-in-out ${tab === t ? "bg-white shadow-sm text-neutral-800" : "text-neutral-400"}`}
+                      className={`px-2 sm:px-4 py-1.5 font-mp rounded-md text-xs sm:text-sm font-medium hover:scale-103 hover:cursor-pointer transition-all duration-200 ease-in-out ${tab === t ? "bg-white shadow-sm text-neutral-800" : "text-neutral-400"}`}
                     >
                       {formatText(t)}
                     </button>
@@ -204,9 +204,9 @@ export default function Dashboard() {
                 </div>
 
                 {tab === "loans" && (
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     {returned > 0 && (
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <button
                           onClick={() => {
                             setShowReturned(!showReturned);
@@ -244,61 +244,63 @@ export default function Dashboard() {
                 <div className="flex items-center gap-0.5 bg-neutral-50 border border-neutral-100 rounded-lg p-0.5">
                   <button
                     onClick={() => setViewMode("table")}
-                    className={`p-3 rounded-md hover:scale-103 hover:cursor-pointer transition-all duration-200 ease-in-out ${viewMode === "table" ? "bg-white shadow-sm text-neutral-800" : "text-neutral-400"}`}
+                    className={`p-2 sm:p-3 rounded-md hover:scale-103 hover:cursor-pointer transition-all duration-200 ease-in-out ${viewMode === "table" ? "bg-white shadow-sm text-neutral-800" : "text-neutral-400"}`}
                   >
-                    <TableIcon size={18} />
+                    <TableIcon size={16} className="sm:w-[18px] sm:h-[18px]" />
                   </button>
                   <button
                     onClick={() => setViewMode("grid")}
-                    className={`p-3 rounded-md hover:scale-103 hover:cursor-pointer transition-all duration-200 ease-in-out ${viewMode === "grid" ? "bg-white shadow-sm text-neutral-800" : "text-neutral-400"}`}
+                    className={`p-2 sm:p-3 rounded-md hover:scale-103 hover:cursor-pointer transition-all duration-200 ease-in-out ${viewMode === "grid" ? "bg-white shadow-sm text-neutral-800" : "text-neutral-400"}`}
                   >
-                    <LayoutGrid size={18} />
+                    <LayoutGrid size={16} className="sm:w-[18px] sm:h-[18px]" />
                   </button>
                   <button
                     onClick={() => setViewMode("chart")}
-                    className={`p-3 rounded-md hover:scale-103 hover:cursor-pointer transition-all duration-200 ease-in-out ${viewMode === "chart" ? "bg-white shadow-sm text-neutral-800" : "text-neutral-400"}`}
+                    className={`p-2 sm:p-3 rounded-md hover:scale-103 hover:cursor-pointer transition-all duration-200 ease-in-out ${viewMode === "chart" ? "bg-white shadow-sm text-neutral-800" : "text-neutral-400"}`}
                   >
-                    <LineChartIcon size={18} />
+                    <LineChartIcon size={16} className="sm:w-[18px] sm:h-[18px]" />
                   </button>
                 </div>
               </div>
 
-              <div className="flex flex-row gap-2">
+              <div className="flex flex-wrap gap-1 sm:gap-2">
                 <button
                   onClick={() => setAddOpen(true)}
-                  className="flex items-center font-mp gap-1.5 px-4 py-2 bg-neutral-800 text-white text-[13px] rounded-lg hover:bg-neutral-700 hover:scale-103 hover:cursor-pointer transition-all duration-200 ease-in-out font-medium"
+                  className="flex items-center font-mp gap-1 sm:gap-1.5 px-2 sm:px-4 py-2 bg-neutral-800 text-white text-[12px] sm:text-[13px] rounded-lg hover:bg-neutral-700 hover:scale-103 hover:cursor-pointer transition-all duration-200 ease-in-out font-medium"
                 >
-                  <Plus size={15} />
-                  {tab === "inventory"
+                  <Plus size={14} className="sm:w-[15px] sm:h-[15px]" />
+                  <span className="hidden sm:inline">{tab === "inventory"
                     ? formatText("Add Item")
-                    : formatText("Log Loan")}
+                    : formatText("Log Loan")}</span>
+                  <span className="inline sm:hidden">{tab === "inventory" ? "Add" : "Log"}</span>
                 </button>
                 <button
                   onClick={handleClear}
-                  className={`flex items-center font-mp gap-1.5 px-4 py-2 text-[13px] rounded-lg font-medium border hover:scale-103 hover:cursor-pointer transition-all duration-200 ease-in-out ${
+                  className={`flex items-center font-mp gap-1 sm:gap-1.5 px-2 sm:px-4 py-2 text-[12px] sm:text-[13px] rounded-lg font-medium border hover:scale-103 hover:cursor-pointer transition-all duration-200 ease-in-out ${
                     selectedRows.length > 0
                       ? "bg-red-50 border-red-100 text-red-600 hover:bg-red-100"
                       : "bg-white border-neutral-200 text-neutral-500 hover:bg-neutral-50"
                   }`}
                 >
-                  <Trash2 size={15} />
-                  {selectedRows.length > 0
+                  <Trash2 size={14} className="sm:w-[15px] sm:h-[15px]" />
+                  <span className="hidden sm:inline">{selectedRows.length > 0
                     ? `Clear (${selectedRows.length})`
-                    : "Clear All"}
+                    : "Clear All"}</span>
+                  <span className="inline sm:hidden">{selectedRows.length > 0 ? selectedRows.length : "All"}</span>
                 </button>
                 <button
                   onClick={() => setExportOpen(true)}
-                  className="flex items-center gap-1.5 font-mp px-4 py-2 text-[13px] rounded-lg font-medium border hover:scale-103 hover:cursor-pointer transition-all duration-200 ease-in-out bg-white border-neutral-200 text-neutral-500 hover:bg-neutral-50"
+                  className="flex items-center gap-1 sm:gap-1.5 font-mp px-2 sm:px-4 py-2 text-[12px] sm:text-[13px] rounded-lg font-medium border hover:scale-103 hover:cursor-pointer transition-all duration-200 ease-in-out bg-white border-neutral-200 text-neutral-500 hover:bg-neutral-50"
                 >
-                  <Download size={15} />
-                  Export
+                  <Download size={14} className="sm:w-[15px] sm:h-[15px]" />
+                  <span className="hidden sm:inline">Export</span>
                 </button>
                 <button
                   onClick={() => setImportOpen(true)}
-                  className="flex items-center gap-1.5 font-mp px-4 py-2 text-[13px] rounded-lg font-medium border hover:scale-103 hover:cursor-pointer transition-all duration-200 ease-in-out bg-white border-neutral-200 text-neutral-500 hover:bg-neutral-50"
+                  className="flex items-center gap-1 sm:gap-1.5 font-mp px-2 sm:px-4 py-2 text-[12px] sm:text-[13px] rounded-lg font-medium border hover:scale-103 hover:cursor-pointer transition-all duration-200 ease-in-out bg-white border-neutral-200 text-neutral-500 hover:bg-neutral-50"
                 >
-                  <UploadIcon size={15} />
-                  Import
+                  <UploadIcon size={14} className="sm:w-[15px] sm:h-[15px]" />
+                  <span className="hidden sm:inline">Import</span>
                 </button>
               </div>
             </div>
@@ -418,7 +420,7 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="xl:flex-[1] min-w-0 flex flex-col gap-4">
+          <div className="lg:flex-[1] min-w-0 flex flex-col gap-4">
             <div className="flex-1 border border-neutral-100 rounded-2xl bg-white flex flex-col overflow-hidden">
               <div className="px-5 py-4 border-b border-neutral-100 flex items-center gap-2 shrink-0">
                 <History size={15} className="text-neutral-400" />
