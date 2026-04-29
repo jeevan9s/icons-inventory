@@ -144,20 +144,37 @@ export default function LoansTable({
   const router = useRouter();
 
   const { data: stockRows = [] } = useGetRows("Stock");
+  const [equipmentTypes, setEquipmentTypes] = useState<string[]>([]);
 
-  const customTypes =
-    typeof window !== "undefined"
-      ? JSON.parse(localStorage.getItem("custom_equipment_types") ?? "[]")
-      : [];
+  const updateEquipmentTypes = useCallback(() => {
+    if (typeof window === "undefined") return;
+    const customTypes = JSON.parse(
+      localStorage.getItem("custom_equipment_types") ?? "[]",
+    );
+    const types = Array.from(
+      new Set([
+        ...(stockRows as any[])
+          .map((r) => normalizeEqType(r.item_properties?.equipment_type))
+          .filter(Boolean),
+        ...customTypes.map(normalizeEqType),
+      ]),
+    ) as string[];
+    setEquipmentTypes(types);
+  }, [stockRows]);
 
-  const equipmentTypes = Array.from(
-    new Set([
-      ...(stockRows as any[])
-        .map((r) => r.item_properties?.equipment_type)
-        .filter(Boolean),
-      ...customTypes,
-    ]),
-  ) as string[];
+  useEffect(() => {
+    updateEquipmentTypes();
+  }, [updateEquipmentTypes]);
+
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "custom_equipment_types") {
+        updateEquipmentTypes();
+      }
+    };
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, [updateEquipmentTypes]);
 
   useEffect(() => {
     let active = true;

@@ -106,6 +106,7 @@ export default function InventoryTable({
   const [rowSelection, setRowSelection] = useState({});
   const [editData, setEditData] = useState<InventoryRow | null>(null);
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [equipmentTypes, setEquipmentTypes] = useState<string[]>([]);
   const previousSelectionRef = useRef<InventoryRow[]>([]);
 
   const updateStock = useUpdateRow("Stock");
@@ -118,20 +119,35 @@ export default function InventoryTable({
 
   const { data: stockRows = [] } = useGetRows("Stock");
 
-  const equipmentTypes = useMemo(() => {
-    if (typeof window === "undefined") return [];
+  const updateEquipmentTypes = useCallback(() => {
+    if (typeof window === "undefined") return;
     const customTypes = JSON.parse(
       localStorage.getItem("custom_equipment_types") ?? "[]",
     );
-    return Array.from(
+    const types = Array.from(
       new Set([
         ...(stockRows as any[])
-          .map((r) => r.item_properties?.equipment_type)
+          .map((r) => normalizeEqType(r.item_properties?.equipment_type))
           .filter(Boolean),
-        ...customTypes,
+        ...customTypes.map(normalizeEqType),
       ]),
-    );
+    ) as string[];
+    setEquipmentTypes(types);
   }, [stockRows]);
+
+  useEffect(() => {
+    updateEquipmentTypes();
+  }, [updateEquipmentTypes]);
+
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "custom_equipment_types") {
+        updateEquipmentTypes();
+      }
+    };
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, [updateEquipmentTypes]);
 
   const handleDelete = async (id: number) => {
     const user = await getUserInfo();
