@@ -104,8 +104,8 @@ Once loaded, select the **Launch** button to start the app and login.
 Once signed in, you will have access to the system.
 
 **A note on Role-Based Access**:
-- If you are accessing the app as an iCon/Operator, you will have access to all functionality besides user management and clearing records. 
-- As an Admin/Head Icon you will have access to all of the app's functionality. 
+- If you are accessing the app as an iCon/Operator, you have access to all functionality besides user management and clearing records. 
+- As an Admin/Head Icon you have access to all of the app's functionality. 
 
 ### 2.2 App Tour
 
@@ -204,7 +204,7 @@ All data can be exported as a CSV file with optional filtering.
 
 ## 4. Technical Information 
 ### 4.1 Frameworks and Technologies 
-The IMS uses the following frameworks:
+The IMS leverages the following frameworks:
 
 **Frontend**
 -  React JS
