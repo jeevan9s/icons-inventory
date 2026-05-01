@@ -3,6 +3,7 @@
 
 import Modal from "./Modal";
 import { onLogout } from "@/services/auth/authCallers";
+import { toast } from "sonner";
 
 type Props = {
   isOpen: boolean
@@ -15,9 +16,10 @@ export default function SignOutDialog({ isOpen, onClose }: Props) {
 async function signOutHandler() {
 
   try {
-    await onLogout(); 
+    await onLogout();
   } catch(err) {
     console.error(err);
+    toast.error("Failed to sign out. Please try again.");
   }
 
 }

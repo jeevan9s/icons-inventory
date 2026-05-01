@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, type ElementType } from "react";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
@@ -29,6 +29,7 @@ type sbProps = {
   setIsLocked: (locked: boolean) => void;
   disableHoverZones?: boolean;
   onWidthChange?: (width: number) => void;
+  isMobile?: boolean;
 };
 
 const menuItems = [
@@ -55,10 +56,10 @@ export default function Sidebar({
   setIsHovered,
   disableHoverZones,
   onWidthChange,
+  isMobile = false,
 }: sbProps) {
   const pathname = usePathname();
   const [width, setWidth] = useState(DEFAULT_WIDTH);
-  const [mounted, setMounted] = useState(false);
   const isResizing = useRef(false);
   const [, forceUpdate] = useState(0);
   const iconOnly = isLocked && width <= ICON_ONLY_WIDTH + 10;
@@ -80,7 +81,6 @@ export default function Sidebar({
   };
 
   useEffect(() => {
-    setMounted(true);
     onWidthChange?.(DEFAULT_WIDTH);
   }, [onWidthChange]);
 
@@ -122,7 +122,7 @@ export default function Sidebar({
     ${isActive ? "bg-[#d4e6c3] text-neutral-800" : "text-neutral-600 hover:bg-[#d4e6c3]/50"}`;
   };
 
-  const renderNavButton = (icon: any, label: string, href?: string, action?: () => void) => {
+  const renderNavButton = (icon: ElementType, label: string, href?: string, action?: () => void) => {
     const Icon = icon;
     const content = (
       <motion.div
@@ -162,7 +162,66 @@ export default function Sidebar({
     );
   };
 
-  if (!mounted) return null;
+  if (isMobile) {
+    return (
+      <>
+        <motion.nav
+          className="fixed z-[60] top-0 left-0 right-0 bg-white border-b border-neutral-200 flex items-center px-4 py-3 gap-2 overflow-x-auto"
+          style={{
+            height: '60px',
+          }}
+        >
+          <div className="flex items-center gap-1.5">
+            {menuItems.map((item) => {
+              const Icon = item.icon;
+              return item.href ? (
+                <Link key={item.label} href={item.href} className="p-2 hover:bg-neutral-100 rounded-lg transition-colors" title={item.label}>
+                  <Icon size={18} className="text-neutral-600" />
+                </Link>
+              ) : null;
+            })}
+          </div>
+
+          <div className="border-r border-neutral-200 h-6 mx-1" />
+
+          <div className="flex items-center gap-1.5">
+            {tableItems.map((item) => {
+              const Icon = item.icon;
+              return item.href ? (
+                <Link key={item.label} href={item.href} className="p-2 hover:bg-neutral-100 rounded-lg transition-colors" title={item.label}>
+                  <Icon size={18} className="text-neutral-600" />
+                </Link>
+              ) : null;
+            })}
+          </div>
+
+          <div className="border-r border-neutral-200 h-6 mx-1" />
+
+          <div className="flex items-center gap-1.5 ml-auto">
+            {[{ icon: Settings, label: "Settings" }, { icon: LogOut, label: "Sign Out" }].map((item) => (
+              <button
+                key={item.label}
+                onClick={() => generalActions[item.label]?.()}
+                className="p-2 hover:bg-neutral-100 rounded-lg transition-colors"
+                title={item.label}
+              >
+                <item.icon size={18} className="text-neutral-600" />
+              </button>
+            ))}
+          </div>
+        </motion.nav>
+
+        <SignOut />
+        <SettingsD />
+        <Add initialTableType="Loans" />
+        <Export
+          initialTableType="Loans"
+          fixedTableType={false}
+          hasSelectedRows={false}
+        />
+      </>
+    );
+  }
 
   return (
     <>
@@ -174,7 +233,7 @@ export default function Sidebar({
           top: NAVBAR_HEIGHT,
           backgroundColor: "rgb(255, 255, 255)",
           width: isLocked ? width : isHovered ? DEFAULT_WIDTH : 0,
-          transition: isResizing.current ? "none" : "width 300ms ease",
+          transition: "width 300ms ease",
           overflow: "hidden",
         }}
       >

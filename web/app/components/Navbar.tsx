@@ -29,8 +29,8 @@ export default function Navbar({ pageType }: navbarProps) {
   if (!mounted) return null;
 
   return (
-    <div className="flex justify-between items-center px-6 py-4 h-18 sm:h-22 md:h-24 z-1 bg-neutral-100" suppressHydrationWarning>
-      <div className="left-5 right-5 w-40 sm:w-52 md:w-64">
+    <div className="flex justify-between items-center px-3 sm:px-6 py-2 sm:py-4 h-auto sm:h-18 md:h-22 lg:h-24 z-1 bg-neutral-100" suppressHydrationWarning>
+      <div className="left-5 right-5 w-40 sm:w-52 md:w-64 hidden md:block">
         <a href="https://www.engsoc.queensu.ca" rel="noopener noreferrer" target="_blank">
           <Image src="/engsoc_logo.png" alt="engsoc logo" width={500} height={500} className="w-full h-auto" />
         </a>
@@ -49,11 +49,7 @@ export default function Navbar({ pageType }: navbarProps) {
               </a>
             </Button>
           )}
-          {(pageType === "main" || pageType === "error") && (
-            <Button asChild className={getButtonClass("/support")}>
-              <Link href="/support">Support</Link>
-            </Button>
-          )}
+   
           <Button asChild className={getButtonClass("/contact")}>
             <Link href="/contact">Contact</Link>
           </Button>

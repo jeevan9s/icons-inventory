@@ -5,6 +5,7 @@ import emailjs from "@emailjs/browser"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
+import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -54,9 +55,10 @@ export function ContactForm() {
       )
 
       form.reset()
-      console.log("Email sent successfully")
+      toast.success("Message sent successfully!")
     } catch (error) {
       console.error("Email failed:", error)
+      toast.error("Failed to send message. Please try again.")
     }
   }
 

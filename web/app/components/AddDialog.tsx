@@ -42,6 +42,7 @@ export default function AddDialog({
     { name: "", quantity: 1, equipment_type: "" },
   ]);
   const [showDropdowns, setShowDropdowns] = useState<boolean[]>([false]);
+  const [equipmentTypes, setEquipmentTypes] = useState<string[]>([]);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   const isEditMode = !!editData;
@@ -55,19 +56,35 @@ export default function AddDialog({
   const queryClient = useQueryClient();
   const { data: stockRows = [] } = useGetRows("Stock");
 
-  const customEquipmentTypes =
-    typeof window !== "undefined"
-      ? JSON.parse(localStorage.getItem("custom_equipment_types") ?? "[]").map(normalizeEqType)
-      : [];
+  const updateEquipmentTypes = useCallback(() => {
+    if (typeof window === "undefined") return;
+    const customEquipmentTypes = JSON.parse(
+      localStorage.getItem("custom_equipment_types") ?? "[]"
+    ).map(normalizeEqType);
+    const types = Array.from(
+      new Set([
+        ...(stockRows as any[])
+          .map((r) => normalizeEqType(r.item_properties?.equipment_type))
+          .filter(Boolean),
+        ...customEquipmentTypes,
+      ]),
+    ) as string[];
+    setEquipmentTypes(types);
+  }, [stockRows]);
 
-  const equipmentTypes = Array.from(
-    new Set([
-      ...(stockRows as any[])
-        .map((r) => normalizeEqType(r.item_properties?.equipment_type))
-        .filter(Boolean),
-      ...customEquipmentTypes,
-    ]),
-  ) as string[];
+  useEffect(() => {
+    updateEquipmentTypes();
+  }, [updateEquipmentTypes]);
+
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "custom_equipment_types") {
+        updateEquipmentTypes();
+      }
+    };
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, [updateEquipmentTypes]);
 
   useEffect(() => {
     setTableType(initialTableType);
@@ -150,12 +167,48 @@ export default function AddDialog({
   if (!user?.id) return toast.error("User session missing.");
 
   const formData = new FormData(e.currentTarget);
+  const studentName = (formData.get("student_name") as string).trim();
   const rawStudentNum = formData.get("student_number") as string;
+  const location = (formData.get("location") as string).trim();
+
+  if (!studentName) {
+    toast.error("Student name is required.");
+    return;
+  }
+
+  if (!rawStudentNum) {
+    toast.error("Student number is required.");
+    return;
+  }
+
+  if (!location) {
+    toast.error("Location is required.");
+    return;
+  }
+
   const studentNum = parseInt(rawStudentNum);
+
+  if (isNaN(studentNum) || studentNum <= 0) {
+    toast.error("Invalid student number.");
+    return;
+  }
 
   if (studentNum > 2147483647) {
     toast.error("Student number too long (Max 10 digits).");
     return;
+  }
+
+  // Validate loan items
+  for (let i = 0; i < loanItems.length; i++) {
+    const item = loanItems[i];
+    if (!item.name.trim()) {
+      toast.error(`Item ${i + 1}: Name is required.`);
+      return;
+    }
+    if (item.quantity <= 0) {
+      toast.error(`Item ${i + 1}: Quantity must be greater than 0.`);
+      return;
+    }
   }
 
   if (isEditMode) {
@@ -189,6 +242,11 @@ export default function AddDialog({
         if (stockMatch && stockMatch.length > 0) {
           const stock = stockMatch[0];
           const qtyDiff = loanItems[0].quantity - (loan.item_quantity ?? 1);
+
+          if (qtyDiff > 0 && stock.net_stock < qtyDiff) {
+            toast.error(`Insufficient stock for "${loanItems[0].name}". Available: ${stock.net_stock}, Additional needed: ${qtyDiff}`);
+            return;
+          }
 
           await updateLoanItemRow.mutateAsync({
             id: loan.loan_item_id,
@@ -268,6 +326,11 @@ export default function AddDialog({
 
       const stock = stockMatch[0];
 
+      if (stock.net_stock < item.quantity) {
+        toast.error(`Insufficient stock for "${item.name}". Available: ${stock.net_stock}, Requested: ${item.quantity}`);
+        continue;
+      }
+
       await insertRow.mutateAsync({
         table: "Loan Items",
         data: {
@@ -306,17 +369,55 @@ export default function AddDialog({
   const handleStockSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    const total = parseInt(formData.get("total_stock") as string);
+    const name = (formData.get("name") as string).trim();
+    const totalStr = formData.get("total_stock") as string;
+    const equipmentType = (formData.get("equipment_type") as string).trim();
+
+    if (!name) {
+      toast.error("Item name is required.");
+      return;
+    }
+
+    if (!totalStr) {
+      toast.error("Total stock is required.");
+      return;
+    }
+
+    const total = parseInt(totalStr);
+
+    if (isNaN(total) || total <= 0) {
+      toast.error("Total stock must be a positive number.");
+      return;
+    }
+
+    if (!equipmentType) {
+      toast.error("Equipment type is required.");
+      return;
+    }
 
     if (isEditMode) {
       const stock = editData as InventoryRow;
+      const netStockStr = formData.get("net_stock") as string;
+
+      if (!netStockStr) {
+        toast.error("Net stock is required.");
+        return;
+      }
+
+      const netStock = parseInt(netStockStr);
+
+      if (isNaN(netStock) || netStock < 0) {
+        toast.error("Net stock must be a non-negative number.");
+        return;
+      }
+
       try {
         await updateStockRow.mutateAsync({
           id: stock.id,
           data: {
-            name: formData.get("name") as string,
+            name: name,
             total_stock: total,
-            net_stock: parseInt(formData.get("net_stock") as string),
+            net_stock: netStock,
             item_properties: {
               ...stock.item_properties,
               equipment_type: normalizeEqType(formData.get("equipment_type") as string),
@@ -334,10 +435,39 @@ export default function AddDialog({
     }
 
     try {
+      const existingItems = await getDataFiltered(
+        "Stock",
+        "name",
+        "ilike",
+        `%${name}%`,
+      );
+      const exactMatch = (existingItems as InventoryRow[]).find(
+        (item) => item.name.toLowerCase() === name.toLowerCase()
+      );
+
+      if (exactMatch) {
+        const newTotal = exactMatch.total_stock + total;
+        const newNet = exactMatch.net_stock + total; 
+
+        await updateStockRow.mutateAsync({
+          id: exactMatch.id,
+          data: {
+            total_stock: newTotal,
+            net_stock: newNet,
+          },
+        });
+
+        toast.info(`Added ${total} units to existing "${name}" item.`);
+        await queryClient.invalidateQueries({ queryKey: ["Stock"] });
+        onClose();
+        router.refresh();
+        return;
+      }
+
       await insertRow.mutateAsync({
         table: "Stock",
         data: {
-          name: formData.get("name") as string,
+          name: name,
           total_stock: total,
           net_stock: total,
           item_properties: {
@@ -658,7 +788,7 @@ export default function AddDialog({
                 </Label>
                 <Input
                   name="name"
-                  placeholder="e.g. Sony A7III"
+                  placeholder="Whiteboard Marker"
                   defaultValue={stockEditData?.name ?? ""}
                   required
                 />
