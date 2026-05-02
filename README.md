@@ -12,12 +12,6 @@ Our solution is to develop a centralized, scalable web-app with an intuitive int
 * Supabase (PostgreSQL)
 * Additional technologies used will be added throughout development. 
 
-### Development Note
-* When creating a branch to work on, use the naming convention below
-> **name/feature-your-implementing** "i.e. jeevan/auth-integration"
-* Use READMEs in higher-level folders (db, services) and for more complicated implementations (cleaner than heavy inline comments)
-* To run the development server from project root: `cd web npm run dev`
-
 ### Installation (Dev)
 * [Node](https://nodejs.org/en/download)
 * Addtional Next.js setup if encountnering installation errors: `npm install next@latest react@latest react-dom@latest`
