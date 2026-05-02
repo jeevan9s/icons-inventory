@@ -1,6 +1,5 @@
 "use client"; 
 import { onLogin } from "@/services/auth/authCallers";
-import Navbar from "@/app/components/Navbar";
 import { Button } from "@/components/ui/button";
 
 export default function LoginPage() {
@@ -14,8 +13,6 @@ export default function LoginPage() {
 
   return (
     <div className="relative min-h-screen flex flex-col items-center bg-neutral-100 select-none">
-      <Navbar pageType="main" />
-
       <div className="flex flex-1 items-center justify-center px-6">
         <div className="flex flex-col md:flex-row items-start gap-10 text-center md:text-left">
           <div className="flex flex-col gap-4 max-w-4xl">
