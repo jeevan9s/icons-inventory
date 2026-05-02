@@ -7,16 +7,9 @@ iCons, a student-staffed organization (QueensU) provide an equipment rental serv
 ### Solution
 Our solution is to develop a centralized, scalable web-app with an intuitive interface to allow for efficient and easy equipment tracking.
 
-### Technologies
+### Core Technologies
 * Next.js (React, Node)
 * Supabase (PostgreSQL)
-* Additional technologies used will be added throughout development. 
-
-### Installation (Dev)
-* [Node](https://nodejs.org/en/download)
-* Addtional Next.js setup if encountnering installation errors: `npm install next@latest react@latest react-dom@latest`
-* Additional TypeScript setup if encountering TS errors: `npm install --save-dev ts-node typescript`
-
 
 ### Authors
 * Jeevan Sanchez  
