@@ -2,7 +2,6 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Navbar from "@/app/components/Navbar";
 
 export default function AuthSuccessPage() {
   const router = useRouter();
@@ -16,8 +15,6 @@ export default function AuthSuccessPage() {
 
   return (
     <div className="min-h-screen flex flex-col items-center bg-neutral-100 select-none">
-      <Navbar pageType="main" />
-
       <div className="flex flex-1 items-center justify-center px-6">
         <div className="flex flex-col md:flex-row items-start gap-10 text-center md:text-left">
           <div className="flex flex-col gap-4">
