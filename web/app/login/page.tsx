@@ -13,7 +13,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center bg-neutral-100 select-none">
+    <div className="relative min-h-screen flex flex-col items-center bg-neutral-100 select-none">
       <Navbar pageType="main" />
 
       <div className="flex flex-1 items-center justify-center px-6">
